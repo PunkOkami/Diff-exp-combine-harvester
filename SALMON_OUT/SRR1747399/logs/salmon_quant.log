@@ -1,0 +1,61 @@
+[2023-03-15 15:13:56.172] [jointLog] [info] Fragment incompatibility prior below threshold.  Incompatible fragments will be ignored.
+[2023-03-15 15:13:56.172] [jointLog] [warning] 
+
+NOTE: It appears you are running salmon without the `--validateMappings` option.
+Mapping validation can generally improve both the sensitivity and specificity of mapping,
+with only a moderate increase in use of computational resources. 
+Mapping validation is planned to become a default option (i.e. turned on by default) in
+the next release of salmon.
+Unless there is a specific reason to do this (e.g. testing on clean simulated data),
+`--validateMappings` is generally recommended.
+
+[2023-03-15 15:13:56.172] [jointLog] [info] parsing read library format
+[2023-03-15 15:13:56.172] [jointLog] [info] There is 1 library.
+[2023-03-15 15:13:56.283] [jointLog] [info] Loading Quasi index
+[2023-03-15 15:13:56.283] [jointLog] [info] Loading 32-bit quasi index
+[2023-03-15 15:14:13.367] [jointLog] [info] done
+[2023-03-15 15:14:13.367] [jointLog] [info] Index contained 198,587 targets
+[2023-03-15 15:16:19.528] [jointLog] [info] Computed 340,137 rich equivalence classes for further processing
+[2023-03-15 15:16:19.528] [jointLog] [info] Counted 16,717,875 total reads in the equivalence classes 
+[2023-03-15 15:16:19.533] [jointLog] [warning] 0.00199766% of fragments were shorter than the k used to build the index (31).
+If this fraction is too large, consider re-building the index with a smaller k.
+The minimum read size found was 30.
+
+
+[2023-03-15 15:16:19.533] [jointLog] [info] Number of fragments discarded because they have only dovetail (discordant) mappings : 35,936
+[2023-03-15 15:16:19.533] [jointLog] [info] Mapping rate = 88.8208%
+
+[2023-03-15 15:16:19.533] [jointLog] [info] finished quantifyLibrary()
+[2023-03-15 15:16:19.533] [jointLog] [info] Starting optimizer
+[2023-03-15 15:16:19.618] [jointLog] [info] Marked 0 weighted equivalence classes as degenerate
+[2023-03-15 15:16:19.637] [jointLog] [info] iteration = 0 | max rel diff. = 5558.89
+[2023-03-15 15:16:19.528] [fileLog] [info] 
+At end of round 0
+==================
+Observed 18822017 total fragments (18822017 in most recent round)
+
+[2023-03-15 15:16:21.560] [jointLog] [info] iteration = 100 | max rel diff. = 17.9152
+[2023-03-15 15:16:23.478] [jointLog] [info] iteration = 200 | max rel diff. = 5.7801
+[2023-03-15 15:16:25.397] [jointLog] [info] iteration = 300 | max rel diff. = 1.58996
+[2023-03-15 15:16:27.315] [jointLog] [info] iteration = 400 | max rel diff. = 15.2571
+[2023-03-15 15:16:29.231] [jointLog] [info] iteration = 500 | max rel diff. = 13.8975
+[2023-03-15 15:16:31.148] [jointLog] [info] iteration = 600 | max rel diff. = 0.803037
+[2023-03-15 15:16:33.066] [jointLog] [info] iteration = 700 | max rel diff. = 9.49794
+[2023-03-15 15:16:34.981] [jointLog] [info] iteration = 800 | max rel diff. = 0.257054
+[2023-03-15 15:16:36.897] [jointLog] [info] iteration = 900 | max rel diff. = 0.271424
+[2023-03-15 15:16:38.816] [jointLog] [info] iteration = 1,000 | max rel diff. = 0.0248342
+[2023-03-15 15:16:40.759] [jointLog] [info] iteration = 1,100 | max rel diff. = 0.0168001
+[2023-03-15 15:16:42.226] [jointLog] [info] iteration = 1,200 | max rel diff. = 0.0780233
+[2023-03-15 15:16:43.687] [jointLog] [info] iteration = 1,300 | max rel diff. = 0.0174422
+[2023-03-15 15:16:45.156] [jointLog] [info] iteration = 1,400 | max rel diff. = 0.0214905
+[2023-03-15 15:16:46.604] [jointLog] [info] iteration = 1,500 | max rel diff. = 1.28144
+[2023-03-15 15:16:48.046] [jointLog] [info] iteration = 1,600 | max rel diff. = 0.262657
+[2023-03-15 15:16:48.119] [jointLog] [info] iteration = 1,606 | max rel diff. = 0.00957612
+[2023-03-15 15:16:48.123] [jointLog] [info] Finished optimizer
+[2023-03-15 15:16:48.123] [jointLog] [info] writing output 
+
+[2023-03-15 15:16:48.362] [jointLog] [info] Computing gene-level abundance estimates
+[2023-03-15 15:17:16.285] [jointLog] [info] There were 199234 transcripts mapping to 58233 genes
+[2023-03-15 15:17:16.285] [jointLog] [info] NOTE: We recommend using tximport (https://bioconductor.org/packages/release/bioc/html/tximport.html) for aggregating transcript-level salmon abundance estimates to the gene level.  It is more versatile, exposes more features, and allows considering multi-sample information during aggregation.
+[2023-03-15 15:17:16.509] [jointLog] [info] Aggregating expressions to gene level
+[2023-03-15 15:17:16.625] [jointLog] [info] done

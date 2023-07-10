@@ -1,0 +1,11 @@
+{
+    "salmon_version": "0.14.1",
+    "threads": "4",
+    "index": "index/human_transcriptome",
+    "libType": "IU",
+    "mates1": "TRIMMED/SRR1747303_clean_R1.fastq",
+    "mates2": "TRIMMED/SRR1747303_clean_R2.fastq",
+    "output": "SALMON_OUT/SRR1747303",
+    "geneMap": "Homo_sapiens.GRCh38.88.gtf",
+    "auxDir": "aux_info"
+}

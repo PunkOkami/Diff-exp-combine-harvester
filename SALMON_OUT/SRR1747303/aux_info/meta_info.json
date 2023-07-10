@@ -1,0 +1,42 @@
+{
+    "salmon_version": "0.14.1",
+    "samp_type": "none",
+    "opt_type": "vb",
+    "quant_errors": [],
+    "num_libraries": 1,
+    "library_types": [
+        "IU"
+    ],
+    "frag_dist_length": 1001,
+    "seq_bias_correct": false,
+    "gc_bias_correct": false,
+    "num_bias_bins": 4096,
+    "mapping_type": "mapping",
+    "num_valid_targets": 198587,
+    "num_decoy_targets": 0,
+    "num_eq_classes": 371541,
+    "serialized_eq_classes": false,
+    "eq_class_properties": [],
+    "length_classes": [
+        513,
+        654,
+        1009,
+        2256,
+        109224
+    ],
+    "index_seq_hash": "7c6a8a9a5d135c65da8a7c9924b8c817c2c48279aa14a8c0c719d109b28ddfbc",
+    "index_name_hash": "aa1116b5bdee42ad3bb303ad7d84ef58647cbb9eb50b30cacbc84c63f3f32185",
+    "index_seq_hash512": "05e323a9d382495b625034fc94c7e8d2d5cf8c8c92e59b7e61e5367c21616fd037780f8559df313ac231ce75035f7a038d8eec003f5c6057f0c6c6903f91e100",
+    "index_name_hash512": "0aaac023a66d23e9ddaea75a4e40e513ce35efc769b83a424ac07d2373320bcad278a5aabcc485bf7806cc174b148857f1d63afaf229a4bba9ad9c8e191fc42a",
+    "num_bootstraps": 0,
+    "num_processed": 21421215,
+    "num_mapped": 19071929,
+    "num_decoy_fragments": 0,
+    "num_dovetail_fragments": 36551,
+    "num_fragments_filtered_vm": 0,
+    "num_alignments_below_threshold_for_mapped_fragments_vm": 0,
+    "percent_mapped": 89.03290032801594,
+    "call": "quant",
+    "start_time": "Wed Mar 15 15:21:20 2023",
+    "end_time": "Wed Mar 15 15:25:14 2023"
+}

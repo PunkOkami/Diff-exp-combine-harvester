@@ -1,0 +1,57 @@
+[2023-03-15 15:21:23.975] [jointLog] [info] Fragment incompatibility prior below threshold.  Incompatible fragments will be ignored.
+[2023-03-15 15:21:23.975] [jointLog] [warning] 
+
+NOTE: It appears you are running salmon without the `--validateMappings` option.
+Mapping validation can generally improve both the sensitivity and specificity of mapping,
+with only a moderate increase in use of computational resources. 
+Mapping validation is planned to become a default option (i.e. turned on by default) in
+the next release of salmon.
+Unless there is a specific reason to do this (e.g. testing on clean simulated data),
+`--validateMappings` is generally recommended.
+
+[2023-03-15 15:21:23.975] [jointLog] [info] parsing read library format
+[2023-03-15 15:21:23.975] [jointLog] [info] There is 1 library.
+[2023-03-15 15:21:24.045] [jointLog] [info] Loading Quasi index
+[2023-03-15 15:21:24.045] [jointLog] [info] Loading 32-bit quasi index
+[2023-03-15 15:21:32.507] [jointLog] [info] done
+[2023-03-15 15:21:32.507] [jointLog] [info] Index contained 198,587 targets
+[2023-03-15 15:24:17.325] [jointLog] [info] Computed 365,897 rich equivalence classes for further processing
+[2023-03-15 15:24:17.325] [jointLog] [info] Counted 21,939,299 total reads in the equivalence classes 
+[2023-03-15 15:24:17.331] [jointLog] [warning] 0.00223205% of fragments were shorter than the k used to build the index (31).
+If this fraction is too large, consider re-building the index with a smaller k.
+The minimum read size found was 30.
+
+
+[2023-03-15 15:24:17.331] [jointLog] [info] Number of fragments discarded because they have only dovetail (discordant) mappings : 53,133
+[2023-03-15 15:24:17.331] [jointLog] [info] Mapping rate = 90.0177%
+
+[2023-03-15 15:24:17.331] [jointLog] [info] finished quantifyLibrary()
+[2023-03-15 15:24:17.331] [jointLog] [info] Starting optimizer
+[2023-03-15 15:24:17.462] [jointLog] [info] Marked 0 weighted equivalence classes as degenerate
+[2023-03-15 15:24:17.486] [jointLog] [info] iteration = 0 | max rel diff. = 6151.73
+[2023-03-15 15:24:17.326] [fileLog] [info] 
+At end of round 0
+==================
+Observed 24372204 total fragments (24372204 in most recent round)
+
+[2023-03-15 15:24:19.542] [jointLog] [info] iteration = 100 | max rel diff. = 17.51
+[2023-03-15 15:24:21.612] [jointLog] [info] iteration = 200 | max rel diff. = 15.1562
+[2023-03-15 15:24:23.688] [jointLog] [info] iteration = 300 | max rel diff. = 0.896484
+[2023-03-15 15:24:25.726] [jointLog] [info] iteration = 400 | max rel diff. = 1.19218
+[2023-03-15 15:24:27.762] [jointLog] [info] iteration = 500 | max rel diff. = 0.230596
+[2023-03-15 15:24:29.792] [jointLog] [info] iteration = 600 | max rel diff. = 4.7239
+[2023-03-15 15:24:31.826] [jointLog] [info] iteration = 700 | max rel diff. = 0.107789
+[2023-03-15 15:24:33.857] [jointLog] [info] iteration = 800 | max rel diff. = 0.840393
+[2023-03-15 15:24:35.886] [jointLog] [info] iteration = 900 | max rel diff. = 0.049517
+[2023-03-15 15:24:37.933] [jointLog] [info] iteration = 1,000 | max rel diff. = 0.0463727
+[2023-03-15 15:24:39.960] [jointLog] [info] iteration = 1,100 | max rel diff. = 0.027093
+[2023-03-15 15:24:41.980] [jointLog] [info] iteration = 1,200 | max rel diff. = 0.0806219
+[2023-03-15 15:24:43.786] [jointLog] [info] iteration = 1,290 | max rel diff. = 0.00995076
+[2023-03-15 15:24:43.790] [jointLog] [info] Finished optimizer
+[2023-03-15 15:24:43.790] [jointLog] [info] writing output 
+
+[2023-03-15 15:24:44.035] [jointLog] [info] Computing gene-level abundance estimates
+[2023-03-15 15:25:12.116] [jointLog] [info] There were 199234 transcripts mapping to 58233 genes
+[2023-03-15 15:25:12.116] [jointLog] [info] NOTE: We recommend using tximport (https://bioconductor.org/packages/release/bioc/html/tximport.html) for aggregating transcript-level salmon abundance estimates to the gene level.  It is more versatile, exposes more features, and allows considering multi-sample information during aggregation.
+[2023-03-15 15:25:12.325] [jointLog] [info] Aggregating expressions to gene level
+[2023-03-15 15:25:12.432] [jointLog] [info] done
