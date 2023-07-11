@@ -2,6 +2,7 @@
 library(tximport)
 library(DESeq2)
 library(sets)
+library(gplots)
 
 # setting sample names and creating factor assigning samples to groups
 control_samples = c('SRR1747395', 'SRR1747397', 'SRR1747399')
@@ -29,6 +30,9 @@ head(res)
 print('Genes with highest absolute log2FC value')
 head(res[order(abs(res$log2FoldChange), decreasing = TRUE), ])
 
+# ploitting MA visualisation
+plotMA(res)
+
 # ploting counts of 6 genes with smallest padj
 small_padj = head(row.names(res), 6)
 par(mfrow = c(1, 3))
@@ -46,6 +50,3 @@ par(mfrow = c(1,1))
 with(res, plot(log2FoldChange, -log10(pvalue), pch = 20, main = "Volcano plot"))
 with(subset(res, padj < 0.01 ), points(log2FoldChange, -log10(pvalue), pch = 20, col = "blue"))
 with(subset(res, padj < 0.01 & abs(log2FoldChange) > 1.5), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red"))
-
-# ploitting MA visualisation
-plotMA(res)
