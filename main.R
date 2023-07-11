@@ -54,3 +54,6 @@ with(subset(res, padj < 0.05 & abs(log2FoldChange) > 1.5), points(log2FoldChange
 # creating heatmap of counts of genes with high FC
 important_genes_counts = data$counts[which(rownames(data$counts) %in% small_padj_x_high_fc), ]
 pheatmap(important_genes_counts, cluster_cols = FALSE)
+
+# saving filtered results to tsv file
+write.table(res, file = 'Results/DESeq_results.tsv', sep = '	', col.names = NA)
