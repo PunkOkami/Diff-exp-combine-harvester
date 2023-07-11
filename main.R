@@ -31,11 +31,11 @@ print('Genes with highest absolute log2FC value')
 head(res[order(abs(res$log2FoldChange), decreasing = TRUE), ])
 
 # ploitting MA visualisation
-plotMA(res)
+plotMA(res, main='MA plot')
 
 # ploting counts of 6 genes with smallest padj
 small_padj = head(row.names(res), 6)
-par(mfrow = c(1, 3))
+par(mfrow = c(2, 3))
 for (gene in small_padj) {
   plotCounts(dds, gene = gene, intgroup = 'sample_group')
 }
@@ -43,6 +43,8 @@ for (gene in small_padj) {
 # looking for genes with both very high absolute fold change as well as small padj
 high_fc = rownames(res[abs(res$log2FoldChange) > 1.5, ])
 small_padj_x_high_fc = intersect(rownames(res), high_fc)
+print('Genes that show both low p-adj and high FC')
+small_padj_x_high_fc
 
 # plotting vulcanoplot showing relation between FC and padj and pointing out genes found using sets
 par(mfrow = c(1,1))
