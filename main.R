@@ -48,5 +48,7 @@ small_padj_x_high_fc = intersect(rownames(res), high_fc)
 par(mfrow = c(1,1))
 with(res, plot(log2FoldChange, -log10(pvalue), pch = 20, main = "Volcano plot", col = 'blue'))
 with(subset(res, padj < 0.05 & abs(log2FoldChange) > 1.5), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red"))
+
+# creating heatmap of counts of genes with high FC
 important_genes_counts = data$counts[which(rownames(data$counts) %in% small_padj_x_high_fc), ]
 pheatmap(important_genes_counts, cluster_cols = FALSE)
