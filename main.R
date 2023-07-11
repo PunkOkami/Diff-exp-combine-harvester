@@ -2,7 +2,7 @@
 library(tximport)
 library(DESeq2)
 library(sets)
-library(gplots)
+library(pheatmap)
 
 # setting sample names and creating factor assigning samples to groups
 control_samples = c('SRR1747395', 'SRR1747397', 'SRR1747399')
@@ -41,12 +41,12 @@ for (gene in small_padj) {
 }
 
 # looking for genes with both very high absolute fold change as well as small padj
-small_padj = row.names(res[res$padj < 0.01, ])
-high_fc = row.names(res[abs(res$log2FoldChange) > 1.5, ])
-small_padj_x_high_fc = intersect(small_padj, high_fc)
+high_fc = rownames(res[abs(res$log2FoldChange) > 1.5, ])
+small_padj_x_high_fc = intersect(rownames(res), high_fc)
 
 # plotting vulcanoplot showing relation between FC and padj and pointing out genes found using sets
 par(mfrow = c(1,1))
-with(res, plot(log2FoldChange, -log10(pvalue), pch = 20, main = "Volcano plot"))
-with(subset(res, padj < 0.01 ), points(log2FoldChange, -log10(pvalue), pch = 20, col = "blue"))
-with(subset(res, padj < 0.01 & abs(log2FoldChange) > 1.5), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red"))
+with(res, plot(log2FoldChange, -log10(pvalue), pch = 20, main = "Volcano plot", col = 'blue'))
+with(subset(res, padj < 0.05 & abs(log2FoldChange) > 1.5), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red"))
+important_genes_counts = data$counts[which(rownames(data$counts) %in% small_padj_x_high_fc), ]
+pheatmap(important_genes_counts, cluster_cols = FALSE)
