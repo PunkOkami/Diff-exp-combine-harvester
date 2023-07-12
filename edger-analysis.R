@@ -18,9 +18,24 @@ data = calcNormFactors(data)
 data = estimateCommonDisp(data)
 data = estimateTagwiseDisp(data)
 
+# plots MDS plot to show how samples compare
+plotMDS(data, method="bcv", col=as.numeric(data$samples$group))
+legend("bottomleft", as.character(unique(data$samples$group)), col=1:2, pch=20)
+
 # perofming test to see differential expression of genes
 edgar_results = exactTest(data)
+
+# showing summary of differential expression
+print('Summary of gene expression')
+de_genes = decideTestsDGE(edgar_results, p.value = 0.05, lfc = 1.5)
+summary(de_genes)
+
+# geting results of de
 edgar_results = topTags(edgar_results, n=Inf)
 edgar_results = edgar_results$table
 edgar_results = edgar_results[edgar_results$FDR < 0.05 & complete.cases(edgar_results$FDR), ]
 edgar_results = edgar_results[order(edgar_results$FDR, decreasing = FALSE), ]
+
+# saving data to a file
+edgar_results =  cbind(data.frame(Geneid=rownames(edgar_results), Fold_change=2**edgar_results$logFC), edgar_results)
+write.table(edgar_results, file = "Results/edger_results.tsv", sep = "\t", quote = FALSE, row.names = FALSE)

@@ -70,4 +70,4 @@ hmcol = colorRampPalette(brewer.pal(9, 'PRGn'))(100)
 heatmap.2(dist_mat, Rowv = as.dendrogram(hc), symm = TRUE, trace = "none", col = rev(hmcol), margin = c(13, 13))
 
 # saving filtered results to tsv file
-write.table(res, file = 'Results/DESeq_results.tsv', sep = '	', col.names = NA)
+write.table(res, file = 'Results/DESeq_results.tsv', sep = '\t', col.names = NA)
