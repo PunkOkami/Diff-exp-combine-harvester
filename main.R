@@ -3,6 +3,7 @@ library(tximport)
 library(DESeq2)
 library(sets)
 library(pheatmap)
+library(ggplot2)
 
 # setting sample names and creating factor assigning samples to groups
 control_samples = c('SRR1747395', 'SRR1747397', 'SRR1747399')
@@ -54,6 +55,10 @@ with(subset(res, padj < 0.05 & abs(log2FoldChange) > 1.5), points(log2FoldChange
 # creating heatmap of counts of genes with high FC
 important_genes_counts = data$counts[which(rownames(data$counts) %in% small_padj_x_high_fc), ]
 pheatmap(important_genes_counts, cluster_cols = FALSE)
+
+# performing and ploting PCA
+rld = rlog(dds, blind = FALSE)
+plotPCA(rld, intgroup = c('sample_group')) + geom_text(aes(label = samples), vjust = 2, size = 3)
 
 # saving filtered results to tsv file
 write.table(res, file = 'Results/DESeq_results.tsv', sep = '	', col.names = NA)
