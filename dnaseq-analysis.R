@@ -4,6 +4,8 @@ library(DESeq2)
 library(sets)
 library(pheatmap)
 library(ggplot2)
+library(gplots)
+library(RColorBrewer)
 
 # setting sample names and creating factor assigning samples to groups
 control_samples = c('SRR1747395', 'SRR1747397', 'SRR1747399')
@@ -54,11 +56,18 @@ with(subset(res, padj < 0.05 & abs(log2FoldChange) > 1.5), points(log2FoldChange
 
 # creating heatmap of counts of genes with high FC
 important_genes_counts = data$counts[which(rownames(data$counts) %in% small_padj_x_high_fc), ]
-pheatmap(important_genes_counts, cluster_cols = FALSE)
+pheatmap(important_genes_counts, cluster_cols = FALSE, color = hcl.colors(50, "plasma"))
 
 # performing and ploting PCA
 rld = rlog(dds, blind = FALSE)
-plotPCA(rld, intgroup = c('sample_group')) + geom_text(aes(label = samples), vjust = 2, size = 3)
+plotPCA(rld, intgroup = 'sample_group') + geom_text(aes(label = samples), vjust = 2, size = 3)
+
+# calculating sample-to-sample distances
+distsRL = dist(t(assay(rld)))
+dist_mat = as.matrix(distsRL)
+hc = hclust(distsRL)
+hmcol = colorRampPalette(brewer.pal(9, 'PRGn'))(100)
+heatmap.2(dist_mat, Rowv = as.dendrogram(hc), symm = TRUE, trace = "none", col = rev(hmcol), margin = c(13, 13))
 
 # saving filtered results to tsv file
 write.table(res, file = 'Results/DESeq_results.tsv', sep = '	', col.names = NA)
