@@ -6,21 +6,25 @@ library(pheatmap)
 library(ggplot2)
 library(gplots)
 library(RColorBrewer)
+library(readr)
 
-# setting sample names and creating factor assigning samples to groups
-control_samples = c('SRR1747395', 'SRR1747397', 'SRR1747399')
-test_samples =  c('SRR1747299', 'SRR1747301', 'SRR1747303')
-samples = c(test_samples, control_samples)
-sample_factor = gl(2, 3, labels = c('treatment', 'reference'))
+# reading data about sample groups from file produced in Python
+sample_data = read_delim('sample_data.tsv', delim = '\t')
+sample_data = data.frame(sample_data)
+sample_names = sample_data[, 1]
+sample_data = sample_data[, -1]
+sample_data = data.frame(sample_group = sample_data, row.names = sample_names)
+sample_data$sample_group = as.factor(sample_data$sample_group)
 
-# finding files and loading them into workspace
-files <- file.path("SALMON_OUT", list.files("SALMON_OUT"), "quant.genes.sf")
-names(files) = samples
-data <- tximport(files, type = "salmon", tx2gene = NULL, txIn = FALSE, geneIdCol = "Name")
+# loading count_data from a file produced in Python
+count_data = read_delim('de_counts.tsv', delim = '\t')
+count_data = data.frame(count_data)
+gene_ids = count_data[, 1]
+count_data = count_data[, -1]
+rownames(count_data) = gene_ids
 
 # creating colData for DESeq2 and changing object from tximport object into DESeq2 data set
-coldata = data.frame(filename = files, sample_group = sample_factor)
-deseq2_data = DESeqDataSetFromTximport(data, coldata, design = ~sample_group)
+deseq2_data = DESeqDataSetFromMatrix(countData = round(count_data), colData = sample_data, design = ~sample_group)
 
 # performing DESeq analysis and printing results in few ways
 dds = DESeq(deseq2_data)
