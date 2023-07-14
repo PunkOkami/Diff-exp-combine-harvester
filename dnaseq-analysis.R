@@ -1,5 +1,4 @@
 # loading needed libs
-library(tximport)
 library(DESeq2)
 library(sets)
 library(pheatmap)
@@ -59,12 +58,12 @@ with(res, plot(log2FoldChange, -log10(pvalue), pch = 20, main = "Volcano plot", 
 with(subset(res, padj < 0.05 & abs(log2FoldChange) > 1.5), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red"))
 
 # creating heatmap of counts of genes with high FC
-important_genes_counts = data$counts[which(rownames(data$counts) %in% small_padj_x_high_fc), ]
+important_genes_counts = count_data[which(rownames(count_data) %in% small_padj_x_high_fc), ]
 pheatmap(important_genes_counts, cluster_cols = FALSE, color = hcl.colors(50, "plasma"))
 
 # performing and ploting PCA
 rld = rlog(dds, blind = FALSE)
-plotPCA(rld, intgroup = 'sample_group') + geom_text(aes(label = samples), vjust = 2, size = 3)
+plotPCA(rld, intgroup = 'sample_group') + geom_text(aes(label = sample_names), vjust = 2, size = 3)
 
 # calculating sample-to-sample distances
 distsRL = dist(t(assay(rld)))
