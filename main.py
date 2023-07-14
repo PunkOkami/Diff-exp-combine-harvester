@@ -39,7 +39,7 @@ def salmon_reading_data(data_dir: str):
 			gene_dict[gene].append(count)
 	
 	# Saving data to file to be read into R easily
-	output_file = open('Example_data/de_counts.tsv', mode='w')
+	output_file = open('de_counts.tsv', mode='w')
 	out_writer = csv.writer(output_file, delimiter='\t')
 	columns_names = ['Gene_ID']
 	columns_names.extend(sample_names)
@@ -55,7 +55,7 @@ def salmon_reading_data(data_dir: str):
 	sample_data = []
 	for sample, group in zip(sample_names, sample_groups):
 		sample_data.append([sample, group])
-	sample_data_file = open('Example_data/sample_data.tsv', mode='w')
+	sample_data_file = open('sample_data.tsv', mode='w')
 	sample_data_writer = csv.writer(sample_data_file, delimiter='\t')
 	sample_data_writer.writerow(['Sample_name', 'Sample_group'])
 	for row in sample_data:
