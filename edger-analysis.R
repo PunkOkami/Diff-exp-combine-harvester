@@ -26,8 +26,10 @@ edgar_data = estimateCommonDisp(edgar_data)
 edgar_data = estimateTagwiseDisp(edgar_data)
 
 # plots MDS plot to show how samples compare
+png(filename = 'Graphs/edgeR/MDS_plot.png')
 plotMDS(edgar_data, col=as.numeric(edgar_data$samples$group), main = 'Sample similarity')
 legend("bottomleft", as.character(unique(edgar_data$samples$group)), col=1:2, pch=20)
+dev.off()
 
 # perofming test to see differential expression of genes
 edgar_results = exactTest(edgar_data)
@@ -39,10 +41,13 @@ summary(de_genes)
 important_genes = rownames(de_genes)[which(de_genes != 0)]
 print('Names of genes with significant differential expression: ')
 print(important_genes)
+png(filename = 'Graphs/edgeR/Mean_difference_plot.png')
 plotSmear(edgar_results, de.tags = important_genes, main = 'Mean difference plot')
+dev.off()
 
 important_genes_counts = count_data[which(rownames(count_data) %in% important_genes), ]
-pheatmap(important_genes_counts, cluster_cols = FALSE, color = hcl.colors(50, "cyan-magenta"))
+pheatmap(important_genes_counts, cluster_cols = FALSE,
+		 color = hcl.colors(50, "cyan-magenta"), filename = 'Graphs/edgeR/counts_heatmap.png')
 
 # geting results of de
 edgar_results = topTags(edgar_results, n=Inf)
