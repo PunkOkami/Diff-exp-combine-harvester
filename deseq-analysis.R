@@ -30,8 +30,6 @@ dds = DESeq(deseq2_data, quiet = TRUE)
 res = results(dds)
 res =  res[complete.cases(res$padj) & res$padj < 0.05, ]
 res =  res[order(res$padj), ]
-smallest_padj = head(res, 6)
-highest_fc = head(res[order(abs(res$log2FoldChange), decreasing = TRUE), ])
 
 # ploitting MA visualisation
 png(filename = 'Graphs/DESeq2/MA_plot.png')
