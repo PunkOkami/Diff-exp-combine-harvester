@@ -1,6 +1,8 @@
 import csv
 from pathlib import Path
 import subprocess
+from matplotlib_venn import venn2
+from matplotlib import pyplot as plt
 
 
 def salmon_reading_data(data_dir: str):
@@ -67,13 +69,13 @@ def salmon_reading_data(data_dir: str):
 # Directory of data, later to be changed for agrpass
 salmon_data_dir = 'Example_data'
 print('Loading data')
-salmon_reading_data(salmon_data_dir)
+# salmon_reading_data(salmon_data_dir)
 
 # calling R scripts
 print('Running DESeq2 analysis')
-subprocess.call('Rscript deseq-analysis.R', shell=True)
+# subprocess.call('Rscript deseq-analysis.R', shell=True)
 print('Running EdgeR analysis')
-subprocess.call('Rscript edger-analysis.R', shell=True)
+# subprocess.call('Rscript edger-analysis.R', shell=True)
 print('DE analysis complete, loading results')
 
 # loading results from DESeq2 script and doing subtle result analysis
@@ -112,7 +114,9 @@ deseq_results = [gene for gene in deseq_results if abs(gene[fc_index]) > 1.5]
 deseq_results = sorted(deseq_results, key=lambda gene: gene[fc_index])
 print(f'There is {len(deseq_results)} genes with Fold Change biologically relevant')
 print('Gene ID - Fold Change - p-adj')
+deseq_gene_ids = set()
 for gene in deseq_results:
+	deseq_gene_ids.add(gene[0])
 	print(f'{gene[0]} - {2**gene[fc_index]} - {gene[padj_index]}')
 print('\n\n')
 
@@ -154,6 +158,21 @@ edgar_results = [gene for gene in edgar_results if abs(gene[log_fc_index]) > 1.5
 edgar_results = sorted(edgar_results, key=lambda gene: gene[fc_index])
 print(f'There is {len(edgar_results)} genes with Fold Change biologically relevant')
 print('Gene ID - Fold Change - p-adj')
+edgar_gene_ids = set()
 for gene in edgar_results:
+	edgar_gene_ids.add(gene[0])
 	print(f'{gene[0]} - {gene[fc_index]} - {gene[padj_index]}')
 print('\n\n')
+
+# comparing results from two methods
+print('Comapring results')
+genes_in_both = deseq_gene_ids.intersection(edgar_gene_ids)
+print(len(genes_in_both))
+only_deseq = deseq_gene_ids.difference(edgar_gene_ids)
+only_edgar = edgar_gene_ids.difference(deseq_gene_ids)
+venn2(subsets=(len(only_edgar), len(only_deseq), len(genes_in_both)), set_labels=('EdgaR', 'DESeq2'))
+plt.title('Genes found by two methods')
+plt.show()
+
+print('Genes two methods agree on:')
+print(' ,'.join(genes_in_both))
