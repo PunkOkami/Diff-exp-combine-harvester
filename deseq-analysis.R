@@ -77,5 +77,6 @@ png(filename = 'Graphs/DESeq2/sample_to_sample_heatmap.png')
 heatmap.2(dist_mat, Rowv = as.dendrogram(hc), symm = TRUE, trace = "none", col = rev(hmcol), margin = c(13, 13))
 garbage = dev.off()
 
+res = cbind(data.frame(GeneID = rownames(res)), data.frame(res))
 # saving filtered results to tsv file
-write.table(res, file = 'Results/DESeq_results.tsv', sep = '\t', col.names = NA)
+write.table(res, file = 'Results/DESeq_results.tsv', sep = '\t', quote = FALSE, row.names = FALSE)
