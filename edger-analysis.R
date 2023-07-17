@@ -52,5 +52,5 @@ edgar_results = edgar_results[edgar_results$FDR < 0.05 & complete.cases(edgar_re
 edgar_results = edgar_results[order(edgar_results$FDR, decreasing = FALSE), ]
 
 # saving data to a file
-edgar_results =  cbind(data.frame(Geneid=rownames(edgar_results), Fold_change=2^edgar_results$logFC), edgar_results)
+edgar_results =  cbind(data.frame(GeneID=rownames(edgar_results), Fold_change=2^edgar_results$logFC), edgar_results)
 write.table(edgar_results, file = "Results/edger_results.tsv", sep = "\t", quote = FALSE, row.names = FALSE)

@@ -76,16 +76,14 @@ print('Running EdgeR analysis')
 subprocess.call('Rscript edger-analysis.R', shell=True)
 print('DE analysis complete, loading results')
 
-# loading results from both scripts and doing subtle result analysis
+# loading results from DESeq2 script and doing subtle result analysis
 deseq_results_file = open('Results/DESeq_results.tsv')
 deseq_reader = csv.reader(deseq_results_file, delimiter='\t')
 first_line = True
-deseq_coloumns = ()
 deseq_results = []
 gene_id_index = 0
 fc_index = 0
 padj_index = 0
-gene_ids = set()
 for line in deseq_reader:
 	if first_line:
 		gene_id_index = line.index('GeneID')
@@ -94,11 +92,11 @@ for line in deseq_reader:
 		first_line = False
 		continue
 	gene_id = line[gene_id_index]
-	gene_ids.add(gene_id)
 	line = [float(line[ind]) for ind in range(len(line)) if ind != gene_id_index]
 	line.insert(0, gene_id)
 	line = tuple(line)
 	deseq_results.append(line)
+deseq_results_file.close()
 
 print('Analysing DESeq results')
 print('\n\n')
@@ -113,7 +111,49 @@ print('\n\n')
 deseq_results = [gene for gene in deseq_results if abs(gene[fc_index]) > 1.5]
 deseq_results = sorted(deseq_results, key=lambda gene: gene[fc_index])
 print(f'There is {len(deseq_results)} genes with Fold Change biologically relevant')
-print('Gene ID - log2 Fold Change - p-adj')
+print('Gene ID - Fold Change - p-adj')
 for gene in deseq_results:
-	print(f'{gene[0]} - {gene[fc_index]} - {gene[padj_index]}')
+	print(f'{gene[0]} - {2**gene[fc_index]} - {gene[padj_index]}')
+print('\n\n')
 
+# loading results from EdgeR script and doing subtle result analysis
+edgar_results_file = open('Results/edger_results.tsv')
+edgar_reader = csv.reader(edgar_results_file, delimiter='\t')
+first_line = True
+edgar_results = []
+gene_id_index = 0
+fc_index = 0
+padj_index = 0
+log_fc_index = 0
+for line in edgar_reader:
+	if first_line:
+		gene_id_index = line.index('GeneID')
+		fc_index = line.index('Fold_change')
+		padj_index = line.index('FDR')
+		log_fc_index = line.index('logFC')
+		first_line = False
+		continue
+	gene_id = line[gene_id_index]
+	line = [float(line[ind]) for ind in range(len(line)) if ind != gene_id_index]
+	line.insert(0, gene_id)
+	line = tuple(line)
+	edgar_results.append(line)
+edgar_results_file.close()
+
+print('Analysing EdgeR results')
+print('\n\n')
+print('6 genes with smallest p-adj:')
+print(f'Gene ID - p-adj')
+for i, gene in enumerate(edgar_results):
+	if i > 5:
+		break
+	print(f'{gene[0]} - {gene[padj_index]}')
+print('\n\n')
+
+edgar_results = [gene for gene in edgar_results if abs(gene[log_fc_index]) > 1.5]
+edgar_results = sorted(edgar_results, key=lambda gene: gene[fc_index])
+print(f'There is {len(edgar_results)} genes with Fold Change biologically relevant')
+print('Gene ID - Fold Change - p-adj')
+for gene in edgar_results:
+	print(f'{gene[0]} - {gene[fc_index]} - {gene[padj_index]}')
+print('\n\n')
