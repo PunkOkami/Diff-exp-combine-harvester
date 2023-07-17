@@ -57,6 +57,7 @@ garbage = dev.off()
 
 # creating heatmap of counts of genes with high FC
 important_genes_counts = count_data[which(rownames(count_data) %in% small_padj_x_high_fc), ]
+important_genes_counts = sweep(important_genes_counts, 2, sizeFactors(dds), '/')
 pheatmap(important_genes_counts, cluster_cols = FALSE,
          color = hcl.colors(50, "plasma"), filename = 'Graphs/DESeq2/heatmap.png')
 
