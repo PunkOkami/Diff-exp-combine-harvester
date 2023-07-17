@@ -1,11 +1,11 @@
 # loading needed libs
-library(limma)
-library(edgeR)
-library(pheatmap)
-library(readr)
+suppressPackageStartupMessages(library(limma))
+suppressPackageStartupMessages(library(edgeR))
+suppressPackageStartupMessages(library(pheatmap))
+suppressPackageStartupMessages(library(readr))
 
 # reading data about sample groups from file produced in Python
-sample_data = read_delim('sample_data.tsv', delim = '\t', show_col_types = FALSE)
+sample_data = suppressMessages(read_delim('sample_data.tsv', delim = '\t', show_col_types = FALSE))
 sample_data = data.frame(sample_data)
 sample_names = sample_data[, 1]
 sample_data = sample_data[, -1]
@@ -13,7 +13,7 @@ sample_data = data.frame(sample_group = sample_data, row.names = sample_names)
 sample_data$sample_group = as.factor(sample_data$sample_group)
 
 # loading count_data from a file produced in Python
-count_data = read_delim('de_counts.tsv', delim = '\t', show_col_types = FALSE)
+count_data = suppressMessages(read_delim('de_counts.tsv', delim = '\t', show_col_types = FALSE))
 count_data = data.frame(count_data)
 gene_ids = count_data[, 1]
 count_data = count_data[, -1]
@@ -29,21 +29,17 @@ edgar_data = estimateTagwiseDisp(edgar_data)
 png(filename = 'Graphs/edgeR/MDS_plot.png')
 plotMDS(edgar_data, col=as.numeric(edgar_data$samples$group), main = 'Sample similarity')
 legend("bottomleft", as.character(unique(edgar_data$samples$group)), col=1:2, pch=20)
-dev.off()
+garbage = dev.off()
 
 # perofming test to see differential expression of genes
 edgar_results = exactTest(edgar_data)
 
 # showing summary of differential expression
-print('Summary of gene expression')
 de_genes = decideTestsDGE(edgar_results, lfc = 1.5)
-summary(de_genes)
 important_genes = rownames(de_genes)[which(de_genes != 0)]
-print('Names of genes with significant differential expression: ')
-print(important_genes)
 png(filename = 'Graphs/edgeR/Mean_difference_plot.png')
 plotSmear(edgar_results, de.tags = important_genes, main = 'Mean difference plot')
-dev.off()
+garbage = dev.off()
 
 important_genes_counts = count_data[which(rownames(count_data) %in% important_genes), ]
 pheatmap(important_genes_counts, cluster_cols = FALSE,
