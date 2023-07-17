@@ -1,5 +1,6 @@
 import csv
 from pathlib import Path
+import subprocess
 
 
 def salmon_reading_data(data_dir: str):
@@ -65,4 +66,54 @@ def salmon_reading_data(data_dir: str):
 
 # Directory of data, later to be changed for agrpass
 salmon_data_dir = 'Example_data'
+print('Loading data')
 salmon_reading_data(salmon_data_dir)
+
+# calling R scripts
+print('Running DESeq2 analysis')
+subprocess.call('Rscript deseq-analysis.R', shell=True)
+print('Running EdgeR analysis')
+subprocess.call('Rscript edger-analysis.R', shell=True)
+print('DE analysis complete, loading results')
+
+# loading results from both scripts and doing subtle result analysis
+deseq_results_file = open('Results/DESeq_results.tsv')
+deseq_reader = csv.reader(deseq_results_file, delimiter='\t')
+first_line = True
+deseq_coloumns = ()
+deseq_results = []
+gene_id_index = 0
+fc_index = 0
+padj_index = 0
+gene_ids = set()
+for line in deseq_reader:
+	if first_line:
+		gene_id_index = line.index('GeneID')
+		fc_index = line.index('log2FoldChange')
+		padj_index = line.index('padj')
+		first_line = False
+		continue
+	gene_id = line[gene_id_index]
+	gene_ids.add(gene_id)
+	line = [float(line[ind]) for ind in range(len(line)) if ind != gene_id_index]
+	line.insert(0, gene_id)
+	line = tuple(line)
+	deseq_results.append(line)
+
+print('Analysing DESeq results')
+print('\n\n')
+print('6 genes with smallest p-adj:')
+print(f'Gene ID - p-adj')
+for i, gene in enumerate(deseq_results):
+	if i > 5:
+		break
+	print(f'{gene[0]} - {gene[padj_index]}')
+print('\n\n')
+
+deseq_results = [gene for gene in deseq_results if abs(gene[fc_index]) > 1.5]
+deseq_results = sorted(deseq_results, key=lambda gene: gene[fc_index])
+print(f'There is {len(deseq_results)} genes with Fold Change biologically relevant')
+print('Gene ID - log2 Fold Change - p-adj')
+for gene in deseq_results:
+	print(f'{gene[0]} - {gene[fc_index]} - {gene[padj_index]}')
+
