@@ -174,7 +174,7 @@ plt.close()
 results_file = open('DE_results.tsv', mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}
-results_writer.writerow(['GeneID', 'FC by DESeq2', 'FC by EdgeR', 'ratio of FC values', 'p-adj by DESeq2', 'p-adj by EdgeR', 'biological role'])
+results_writer.writerow(['GeneID', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR'])
 print('Genes both methods agree on:')
 print('Gene ID - FC by DESeq2 - FC by EdgeR - ratio between DESeq2 and EdgeR values')
 for gene_id in genes_in_both:
@@ -185,4 +185,7 @@ for gene_id in genes_in_both:
 	mean_fc = (deseq_fc+edgar_fc)/2
 	ratio = deseq_fc/edgar_fc
 	print(f'{gene_id} - {deseq_fc} - {edgar_fc} - {ratio}')
-
+	row = [gene_id, deseq_fc, edgar_fc, ratio, deseq_padj, edgar_padj]
+	results_writer.writerow(row)
+print('\n\n')
+print('Result tsv table saved to DE_results.tsv')
