@@ -69,62 +69,62 @@ def salmon_reading_data(data_dir: str):
 # Directory of data, later to be changed for agrpass
 salmon_data_dir = 'Example_data'
 print('Loading data')
-# salmon_reading_data(salmon_data_dir)
+salmon_reading_data(salmon_data_dir)
 
 # calling R scripts
 print('Running DESeq2 analysis')
-# subprocess.call('Rscript deseq-analysis.R', shell=True)
+subprocess.call('Rscript deseq-analysis.R', shell=True)
 print('Running EdgeR analysis')
-# subprocess.call('Rscript edger-analysis.R', shell=True)
+subprocess.call('Rscript edger-analysis.R', shell=True)
 print('DE analysis complete, loading results')
 
 # loading results from DESeq2 script and doing subtle result analysis
 deseq_results_file = open('Results/DESeq_results.tsv')
 deseq_reader = csv.reader(deseq_results_file, delimiter='\t')
 first_line = True
-deseq_results = []
+deseq_results = {}
 gene_id_index = 0
 fc_index = 0
 padj_index = 0
+log_fc_index = 0
 for line in deseq_reader:
 	if first_line:
 		gene_id_index = line.index('GeneID')
-		fc_index = line.index('log2FoldChange')
+		log_fc_index = line.index('log2FoldChange')
+		fc_index = line.index('Fold_change')
 		padj_index = line.index('padj')
 		first_line = False
 		continue
 	gene_id = line[gene_id_index]
-	line = [float(line[ind]) for ind in range(len(line)) if ind != gene_id_index]
-	line.insert(0, gene_id)
-	line = tuple(line)
-	deseq_results.append(line)
+	gene_data = {'padj': float(line[padj_index]), 'fc': float(line[fc_index]), 'log_fc': float(line[log_fc_index])}
+	deseq_results[gene_id] = gene_data
 deseq_results_file.close()
 
 print('Analysing DESeq results')
 print('\n\n')
 print('6 genes with smallest p-adj:')
 print(f'Gene ID - p-adj')
-for i, gene in enumerate(deseq_results):
+for i, (gene_id, gene_data) in enumerate(deseq_results.items()):
 	if i > 5:
 		break
-	print(f'{gene[0]} - {gene[padj_index]}')
+	print(f'{gene_id} - {gene_data["padj"]}')
 print('\n\n')
 
-deseq_results = [gene for gene in deseq_results if abs(gene[fc_index]) > 1.5]
-deseq_results = sorted(deseq_results, key=lambda gene: gene[fc_index])
+deseq_results = {gene: gene_data for gene, gene_data in deseq_results.items() if abs(gene_data['log_fc']) > 1.5}
+deseq_results = dict(sorted(deseq_results.items(), key=lambda gene: gene[1]['fc']))
 print(f'There is {len(deseq_results)} genes with Fold Change biologically relevant')
 print('Gene ID - Fold Change - p-adj')
 deseq_gene_ids = set()
-for gene in deseq_results:
-	deseq_gene_ids.add(gene[0])
-	print(f'{gene[0]} - {2**gene[fc_index]} - {gene[padj_index]}')
+for gene, gene_data in deseq_results.items():
+	deseq_gene_ids.add(gene)
+	print(f'{gene} - {gene_data["fc"]} - {gene_data["padj"]}')
 print('\n\n')
 
 # loading results from EdgeR script and doing subtle result analysis
 edgar_results_file = open('Results/edger_results.tsv')
 edgar_reader = csv.reader(edgar_results_file, delimiter='\t')
 first_line = True
-edgar_results = []
+edgar_results = {}
 gene_id_index = 0
 fc_index = 0
 padj_index = 0
@@ -138,41 +138,35 @@ for line in edgar_reader:
 		first_line = False
 		continue
 	gene_id = line[gene_id_index]
-	line = [float(line[ind]) for ind in range(len(line)) if ind != gene_id_index]
-	line.insert(0, gene_id)
-	line = tuple(line)
-	edgar_results.append(line)
+	gene_data = {'padj': float(line[padj_index]), 'fc': float(line[fc_index]), 'log_fc': float(line[log_fc_index])}
+	edgar_results[gene_id] = gene_data
 edgar_results_file.close()
 
 print('Analysing EdgeR results')
 print('\n\n')
 print('6 genes with smallest p-adj:')
 print(f'Gene ID - p-adj')
-for i, gene in enumerate(edgar_results):
+for i, (gene, gene_data) in enumerate(edgar_results.items()):
 	if i > 5:
 		break
-	print(f'{gene[0]} - {gene[padj_index]}')
+	print(f'{gene} - {gene_data["padj"]}')
 print('\n\n')
 
-edgar_results = [gene for gene in edgar_results if abs(gene[log_fc_index]) > 1.5]
-edgar_results = sorted(edgar_results, key=lambda gene: gene[fc_index])
+edgar_results = {gene: gene_data for gene, gene_data in edgar_results.items() if abs(gene_data['log_fc']) > 1.5}
+edgar_results = dict(sorted(edgar_results.items(), key=lambda gene: gene[1]['fc']))
 print(f'There is {len(edgar_results)} genes with Fold Change biologically relevant')
 print('Gene ID - Fold Change - p-adj')
 edgar_gene_ids = set()
-for gene in edgar_results:
-	edgar_gene_ids.add(gene[0])
-	print(f'{gene[0]} - {gene[fc_index]} - {gene[padj_index]}')
+for gene, gene_data in edgar_results.items():
+	edgar_gene_ids.add(gene)
+	print(f'{gene} - {gene_data["fc"]} - {gene_data["padj"]}')
 print('\n\n')
 
 # comparing results from two methods
 print('Comapring results')
 genes_in_both = deseq_gene_ids.intersection(edgar_gene_ids)
-print(len(genes_in_both))
 only_deseq = deseq_gene_ids.difference(edgar_gene_ids)
 only_edgar = edgar_gene_ids.difference(deseq_gene_ids)
-venn2(subsets=(len(only_edgar), len(only_deseq), len(genes_in_both)), set_labels=('EdgaR', 'DESeq2'))
+venn2([edgar_gene_ids, deseq_gene_ids], set_labels=('EdgaR', 'DESeq2'))
 plt.title('Genes found by two methods')
 plt.show()
-
-print('Genes two methods agree on:')
-print(' ,'.join(genes_in_both))
