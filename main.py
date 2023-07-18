@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 from matplotlib_venn import venn2
 from matplotlib import pyplot as plt
+import argparse
 
 
 def salmon_reading_data(data_dir: str):
@@ -66,10 +67,23 @@ def salmon_reading_data(data_dir: str):
 	sample_data_file.close()
 
 
-# Directory of data, later to be changed for agrpass
-salmon_data_dir = 'Example_data'
+# argparsing
+parser = argparse.ArgumentParser(prog='Differential Expression Combine Harvester',
+								description='This program is for robust differential expression analysis with one terminal command')
+parser.add_argument('dirname', help='path to directory containing results of one of supported programs, see README for a list')
+parser.add_argument('input_type', help='one of [salmon, rsem]. Specifies what program was used to calculate gene counts')
+parser.add_argument('-o', '--out_file', help='Optional argument used to specify where save results in tsv', default='de_results.tsv')
+args = parser.parse_args()
+data_dir = args.dirname
+input_type = args.input_type
+output_file = args.out_file
+
+# loading data
+if input_type != 'salmon':
+	print('This feature is not supported yet')
+	exit(0)
 print('Loading data')
-salmon_reading_data(salmon_data_dir)
+salmon_reading_data(data_dir)
 
 # calling R scripts
 print('Running DESeq2 analysis')
@@ -171,7 +185,7 @@ plt.savefig('Graphs/Comparison/venn.png', format='png')
 plt.close()
 
 # priting info about fc of genes two methods agree on and saving that data to a file
-results_file = open('de_results.tsv', mode='w')
+results_file = open(output_file, mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}
 results_writer.writerow(['GeneID', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR'])
@@ -188,4 +202,4 @@ for gene_id in genes_in_both:
 	row = [gene_id, deseq_fc, edgar_fc, ratio, deseq_padj, edgar_padj]
 	results_writer.writerow(row)
 print('\n\n')
-print('Result tsv table saved to de_results.tsv')
+print(f'Result tsv table saved to {output_file}')
