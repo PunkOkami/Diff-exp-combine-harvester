@@ -171,7 +171,7 @@ plt.savefig('Graphs/Comparison/venn.png', format='png')
 plt.close()
 
 # priting info about fc of genes two methods agree on and saving that data to a file
-results_file = open('DE_results.tsv', mode='w')
+results_file = open('de_results.tsv', mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}
 results_writer.writerow(['GeneID', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR'])
@@ -188,4 +188,4 @@ for gene_id in genes_in_both:
 	row = [gene_id, deseq_fc, edgar_fc, ratio, deseq_padj, edgar_padj]
 	results_writer.writerow(row)
 print('\n\n')
-print('Result tsv table saved to DE_results.tsv')
+print('Result tsv table saved to de_results.tsv')
