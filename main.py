@@ -42,7 +42,7 @@ def salmon_reading_data(data_dir: str):
 			gene_dict[gene].append(count)
 	
 	# Saving data to file to be read into R easily
-	output_file = open('de_counts.tsv', mode='w')
+	output_file = open('Workdata/de_counts.tsv', mode='w')
 	out_writer = csv.writer(output_file, delimiter='\t')
 	columns_names = ['Gene_ID']
 	columns_names.extend(sample_names)
@@ -58,7 +58,7 @@ def salmon_reading_data(data_dir: str):
 	sample_data = []
 	for sample, group in zip(sample_names, sample_groups):
 		sample_data.append([sample, group])
-	sample_data_file = open('sample_data.tsv', mode='w')
+	sample_data_file = open('Workdata/sample_data.tsv', mode='w')
 	sample_data_writer = csv.writer(sample_data_file, delimiter='\t')
 	sample_data_writer.writerow(['Sample_name', 'Sample_group'])
 	for row in sample_data:
@@ -79,7 +79,7 @@ subprocess.call('Rscript edger-analysis.R', shell=True)
 print('DE analysis complete, loading results')
 
 # loading results from DESeq2 script and doing subtle result analysis
-deseq_results_file = open('Results/DESeq_results.tsv')
+deseq_results_file = open('Workdata/DESeq_results.tsv')
 deseq_reader = csv.reader(deseq_results_file, delimiter='\t')
 first_line = True
 deseq_results = {}
@@ -121,7 +121,7 @@ for gene, gene_data in deseq_results.items():
 print('\n\n')
 
 # loading results from EdgeR script and doing subtle result analysis
-edgar_results_file = open('Results/edger_results.tsv')
+edgar_results_file = open('Workdata/edger_results.tsv')
 edgar_reader = csv.reader(edgar_results_file, delimiter='\t')
 first_line = True
 edgar_results = {}
@@ -154,7 +154,7 @@ print('\n\n')
 
 edgar_results = {gene: gene_data for gene, gene_data in edgar_results.items() if abs(gene_data['log_fc']) > 1.5}
 edgar_results = dict(sorted(edgar_results.items(), key=lambda gene: gene[1]['fc']))
-print(f'There is {len(edgar_results)} genes with Fold Change biologically relevant')
+print(f'There are {len(edgar_results)} genes with Fold Change biologically relevant')
 print('Gene ID - Fold Change - p-adj')
 edgar_gene_ids = set()
 for gene, gene_data in edgar_results.items():
@@ -162,11 +162,27 @@ for gene, gene_data in edgar_results.items():
 	print(f'{gene} - {gene_data["fc"]} - {gene_data["padj"]}')
 print('\n\n')
 
-# comparing results from two methods
+# comparing results from two methods by Venn diagram showing how many genes overlap
 print('Comapring results')
 genes_in_both = deseq_gene_ids.intersection(edgar_gene_ids)
-only_deseq = deseq_gene_ids.difference(edgar_gene_ids)
-only_edgar = edgar_gene_ids.difference(deseq_gene_ids)
 venn2([edgar_gene_ids, deseq_gene_ids], set_labels=('EdgaR', 'DESeq2'))
 plt.title('Genes found by two methods')
-plt.show()
+plt.savefig('Graphs/Comparison/venn.png', format='png')
+plt.close()
+
+# priting info about fc of genes two methods agree on and saving that data to a file
+results_file = open('DE_results.tsv', mode='w')
+results_writer = csv.writer(results_file, delimiter='\t')
+genes_in_both_dict = {}
+results_writer.writerow(['GeneID', 'FC by DESeq2', 'FC by EdgeR', 'ratio of FC values', 'p-adj by DESeq2', 'p-adj by EdgeR', 'biological role'])
+print('Genes both methods agree on:')
+print('Gene ID - FC by DESeq2 - FC by EdgeR - ratio between DESeq2 and EdgeR values')
+for gene_id in genes_in_both:
+	edgar_fc = edgar_results[gene_id]['fc']
+	edgar_padj = edgar_results[gene_id]['padj']
+	deseq_fc = deseq_results[gene_id]['fc']
+	deseq_padj = deseq_results[gene_id]['padj']
+	mean_fc = (deseq_fc+edgar_fc)/2
+	ratio = deseq_fc/edgar_fc
+	print(f'{gene_id} - {deseq_fc} - {edgar_fc} - {ratio}')
+

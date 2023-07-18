@@ -8,7 +8,7 @@ suppressPackageStartupMessages(library(RColorBrewer))
 suppressPackageStartupMessages(library(readr))
 
 # reading data about sample groups from file produced in Python
-sample_data = suppressMessages(read_delim('sample_data.tsv', delim = '\t', show_col_types = FALSE))
+sample_data = suppressMessages(read_delim('Workdata/sample_data.tsv', delim = '\t', show_col_types = FALSE))
 sample_data = data.frame(sample_data)
 sample_names = sample_data[, 1]
 sample_data = sample_data[, -1]
@@ -16,7 +16,7 @@ sample_data = data.frame(sample_group = sample_data, row.names = sample_names)
 sample_data$sample_group = as.factor(sample_data$sample_group)
 
 # loading count_data from a file produced in Python
-count_data = suppressMessages(read_delim('de_counts.tsv', delim = '\t', show_col_types = FALSE))
+count_data = suppressMessages(read_delim('Workdata/de_counts.tsv', delim = '\t', show_col_types = FALSE))
 count_data = data.frame(count_data)
 gene_ids = count_data[, 1]
 count_data = count_data[, -1]
@@ -78,4 +78,4 @@ garbage = dev.off()
 
 res = cbind(data.frame(GeneID = rownames(res), Fold_change=2^res$log2FoldChange), data.frame(res))
 # saving filtered results to tsv file
-write.table(res, file = 'Results/DESeq_results.tsv', sep = '\t', quote = FALSE, row.names = FALSE)
+write.table(res, file = 'Workdata/DESeq_results.tsv', sep = '\t', quote = FALSE, row.names = FALSE)
