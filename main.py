@@ -7,6 +7,7 @@ import argparse
 
 
 def salmon_reading_data(data_dir: str):
+	print('Loading data')
 	# Finding data files
 	data_paths = Path(data_dir).rglob('quant.genes.sf')
 	
@@ -79,11 +80,13 @@ input_type = args.input_type
 output_file = args.out_file
 
 # loading data
-if input_type != 'salmon':
+if input_type == 'rsem':
 	print('This feature is not supported yet')
 	exit(0)
-print('Loading data')
-salmon_reading_data(data_dir)
+elif input_type == 'salmon':
+	salmon_reading_data(data_dir)
+else:
+	print('Incorrect input_type')
 
 # calling R scripts
 print('Running DESeq2 analysis')
