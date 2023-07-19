@@ -71,7 +71,7 @@ def salmon_reading_data(data_dir: str):
 # argparsing
 parser = argparse.ArgumentParser(prog='Differential Expression Combine Harvester',
 								description='This program is for robust differential expression analysis with one terminal command')
-parser.add_argument('dirname', help='path to directory containing results of one of supported programs, see README for a list')
+parser.add_argument('dirname', help='path to directory containing results of one of supported programs, seek input_type')
 parser.add_argument('input_type', help='one of [salmon, rsem]. Specifies what program was used to calculate gene counts')
 parser.add_argument('-o', '--out_file', help='Optional argument used to specify where save results in tsv', default='de_results.tsv')
 args = parser.parse_args()
