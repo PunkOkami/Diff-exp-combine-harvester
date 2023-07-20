@@ -203,7 +203,7 @@ attributes = ['name_1006', 'namespace_1003', 'external_gene_name']
 go_data = {}
 gene_names = {}
 print('Asking about genes')
-pbar = tqdm(total=len(genes_in_both), desc='Processing gene ')
+pbar = tqdm(total=len(genes_in_both), desc='Processing genes')
 for gene_id in genes_in_both:
 	response = ensembl_mart.search({'attributes': attributes, 'filters': {'ensembl_gene_id': gene_id}})
 	response = response.raw.data.decode('utf-8').split('\n')[:-1]
