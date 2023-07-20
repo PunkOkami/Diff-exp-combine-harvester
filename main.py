@@ -6,14 +6,15 @@ from matplotlib import pyplot as plt
 import argparse
 from biomart import BiomartServer
 from tqdm import tqdm
+import seaborn as sns
 
 
 def salmon_reading_data(data_dir: str):
-	print('Loading go_data')
-	# Finding go_data files
+	print('Loading data')
+	# Finding data files
 	data_paths = Path(data_dir).rglob('quant.genes.sf')
 	
-	# Reading go_data from files and combining them into one big object
+	# Reading data from files and combining them into one big object
 	data_dict = {}
 	gene_names = []
 	for path in data_paths:
@@ -37,7 +38,7 @@ def salmon_reading_data(data_dir: str):
 		data_dict[sample_name] = data
 		in_file.close()
 	
-	# Putting all go_data in one single dictionary
+	# Putting all data in one single dictionary
 	sample_names = []
 	gene_dict = {gene: [] for gene in gene_names}
 	for sample, genes in data_dict.items():
@@ -45,7 +46,7 @@ def salmon_reading_data(data_dir: str):
 		for gene, count in genes.items():
 			gene_dict[gene].append(count)
 	
-	# Saving go_data to file to be read into R easily
+	# Saving data to file to be read into R easily
 	output_file = open('Workdata/de_counts.tsv', mode='w')
 	out_writer = csv.writer(output_file, delimiter='\t')
 	columns_names = ['Gene_ID']
@@ -81,7 +82,7 @@ data_dir = args.dirname
 input_type = args.input_type
 output_file = args.out_file
 
-# loading go_data
+# loading data
 if input_type == 'rsem':
 	print('This feature is not supported yet')
 	exit(0)
@@ -92,9 +93,9 @@ else:
 
 # calling R scripts
 print('Running DESeq2 analysis')
-subprocess.call('Rscript deseq-analysis.R', shell=True)
+# subprocess.call('Rscript deseq-analysis.R', shell=True)
 print('Running EdgeR analysis')
-subprocess.call('Rscript edger-analysis.R', shell=True)
+# subprocess.call('Rscript edger-analysis.R', shell=True)
 print('DE analysis complete, loading results')
 
 # loading results from DESeq2 script and doing subtle result analysis
@@ -190,38 +191,64 @@ plt.title('Genes found by two methods')
 plt.savefig('Graphs/Comparison/venn.png', format='png')
 plt.close()
 
-# finding what biological role a gene has accoriding to GO database
-## connecting to GO database and getting specified dataset
-print('Connecting to Biomart database')
+# finding what biological role genes has accoriding to Biomart database
+print('Connecting to Biomart database, will take a bit, do not stop the execution')
 try:
 	server = BiomartServer('http://useast.ensembl.org/biomart')
 except:
 	print('Error occured while trying to connect to Biomart.\nHappens sometimes, try again in 15 minutes')
 	exit(1)
 ensembl_mart = server.datasets['hsapiens_gene_ensembl']
-attributes = ['name_1006', 'namespace_1003']
+attributes = ['name_1006', 'namespace_1003', 'external_gene_name']
 go_data = {}
+gene_names = {}
 print('Asking about genes')
-pbar = tqdm(total=len(genes_in_both))
+pbar = tqdm(total=len(genes_in_both), desc='Processing gene ')
 for gene_id in genes_in_both:
 	response = ensembl_mart.search({'attributes': attributes, 'filters': {'ensembl_gene_id': gene_id}})
-	go_terms = response.raw.data.decode('utf-8').split('\n')[:-1]
-	go_terms = [line.split('\t')[0] for line in go_terms if line.split('\t')[1] == 'biological_process'][:-1]
+	response = response.raw.data.decode('utf-8').split('\n')[:-1]
+	go_terms = [line.split('\t')[0] for line in response if line.split('\t')[1] == 'biological_process'][:-1]
+	gene_name = response[0].split('\t')[-1]
+	if gene_name == '':
+		gene_name = 'NA'
+	gene_names[gene_id] = gene_name
 	if len(go_terms) == 0:
-		go_data[gene_id] = 'Unknown'
+		go_data[gene_id] = ['Unknown']
 	else:
 		go_data[gene_id] = go_terms
 	pbar.update(1)
-print(go_data)
+pbar.close()
 
-# priting info about fc of genes two methods agree on and saving that go_data to a file
+# constructing barplot_data
+barplot_names = []
+barplot_values = []
+for gene_id, functions in go_data.items():
+	if functions == ['Unknown']:
+		continue
+	edgar_fc = edgar_results[gene_id]['fc']
+	deseq_fc = deseq_results[gene_id]['fc']
+	mean_fc = (deseq_fc + edgar_fc) / 2
+	for function in functions:
+		gene_name = gene_names[gene_id]
+		barplot_names.append(function)
+		barplot_values.append(mean_fc)
+
+plt.subplots(figsize=(5, 5))
+g = sns.catplot(x=barplot_values, y=barplot_names, orient='v')
+g.set_axis_labels('FC', 'Biological function')
+g.figure.suptitle('Fold Change of each biological function that changed expression')
+plt.show()
+
+
+# priting info about fc of genes two methods agree on and saving that data to a file
 results_file = open(output_file, mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}
-results_writer.writerow(['GeneID', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR', 'biological functions'])
+results_writer.writerow(['Gene_ID', 'Gene_name', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR', 'biological functions'])
 print('Genes both methods agree on:')
 print('Gene ID - FC by DESeq2 - FC by EdgeR - ratio between DESeq2 and EdgeR values')
 for gene_id in genes_in_both:
+	gene_name = gene_names[gene_id]
 	edgar_fc = edgar_results[gene_id]['fc']
 	edgar_padj = edgar_results[gene_id]['padj']
 	deseq_fc = deseq_results[gene_id]['fc']
@@ -230,7 +257,8 @@ for gene_id in genes_in_both:
 	ratio = deseq_fc/edgar_fc
 	print(f'{gene_id} - {deseq_fc} - {edgar_fc} - {ratio}')
 	bio_func = go_data[gene_id]
-	row = [gene_id, deseq_fc, edgar_fc, ratio, deseq_padj, edgar_padj, bio_func]
+	bio_func = ', '.join(bio_func)
+	row = [gene_id, gene_name, deseq_fc, edgar_fc, ratio, deseq_padj, edgar_padj, bio_func]
 	results_writer.writerow(row)
 print('\n\n')
 print(f'Result tsv table saved to {output_file}')
