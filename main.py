@@ -9,8 +9,34 @@ from tqdm import tqdm
 import seaborn as sns
 
 
-def salmon_reading_data(data_dir: str):
-	print('Loading data')
+def sample_data_construction(sample_names: list[str], design_path: str):
+	# reading experiment design file
+	design = {}
+	design_file = open(design_path)
+	for line in design_file:
+		line = line.strip()
+		line = line.split(': ')
+		group = line[0]
+		samples = line[1].split(', ')
+		for sample in samples:
+			design[sample] = group
+	design_file.close()
+	
+	# ordering dictionary according to sample_names
+	index_map = {val: index for index, val in enumerate(sample_names)}
+	design = sorted(design.items(), key=lambda item: index_map[item[0]])
+	
+	# Creating table saying what group is what sample is in
+	sample_data_file = open('Workdata/sample_data.tsv', mode='w')
+	sample_data_writer = csv.writer(sample_data_file, delimiter='\t')
+	sample_data_writer.writerow(['Sample_name', 'Sample_group'])
+	for row in design:
+		sample_data_writer.writerow(row)
+	# sample_data_writer.writerow(row)
+	sample_data_file.close()
+
+
+def salmon_reading_data(data_dir: str, design_file: str):
 	# Finding data files
 	data_paths = Path(data_dir).rglob('quant.genes.sf')
 	
@@ -58,17 +84,8 @@ def salmon_reading_data(data_dir: str):
 		out_writer.writerow(out_row)
 	output_file.close()
 	
-	# Creating table saying what group is what sample is in
-	sample_groups = ['treatment', 'treatment', 'reference', 'reference', 'reference', 'treatment']
-	sample_data = []
-	for sample, group in zip(sample_names, sample_groups):
-		sample_data.append([sample, group])
-	sample_data_file = open('Workdata/sample_data.tsv', mode='w')
-	sample_data_writer = csv.writer(sample_data_file, delimiter='\t')
-	sample_data_writer.writerow(['Sample_name', 'Sample_group'])
-	for row in sample_data:
-		sample_data_writer.writerow(row)
-	sample_data_file.close()
+	# Constructing sample_data file in a way for rows to be in order with colnames in data file
+	sample_data_construction(sample_names, design_file)
 
 
 # argparsing
@@ -76,26 +93,29 @@ parser = argparse.ArgumentParser(prog='Differential Expression Combine Harvester
 								description='This program is for robust differential expression analysis with one terminal command')
 parser.add_argument('dirname', help='path to directory containing results of one of supported programs, seek input_type')
 parser.add_argument('input_type', help='one of [salmon, rsem]. Specifies what program was used to calculate gene counts')
+parser.add_argument('design_filename', help='path to file explaining experiment design, see README for information how to write one')
 parser.add_argument('-o', '--out_file', help='Optional argument used to specify where save results in tsv', default='de_results.tsv')
 args = parser.parse_args()
 data_dir = args.dirname
 input_type = args.input_type
 output_file = args.out_file
+design_file = args.design_filename
 
+# Creating table saying what group is what sample is in
+print('Loading data')
 # loading data
 if input_type == 'rsem':
 	print('This feature is not supported yet')
 	exit(0)
 elif input_type == 'salmon':
-	salmon_reading_data(data_dir)
+	salmon_reading_data(data_dir, design_file)
 else:
 	print('Incorrect input_type')
-
 # calling R scripts
 print('Running DESeq2 analysis')
-# subprocess.call('Rscript deseq-analysis.R', shell=True)
+subprocess.call('Rscript deseq-analysis.R', shell=True)
 print('Running EdgeR analysis')
-# subprocess.call('Rscript edger-analysis.R', shell=True)
+subprocess.call('Rscript edger-analysis.R', shell=True)
 print('DE analysis complete, loading results')
 
 # loading results from DESeq2 script and doing subtle result analysis
