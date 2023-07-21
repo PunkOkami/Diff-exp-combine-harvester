@@ -209,7 +209,7 @@ genes_in_both.sort()
 venn2([edgar_gene_ids, deseq_gene_ids], set_labels=('EdgaR', 'DESeq2'))
 plt.title('Genes found by two methods')
 plt.savefig('Graphs/Comparison/venn.png', format='png')
-plt.close()
+plt.show()
 
 # finding what biological role genes has accoriding to Biomart database
 print('Connecting to Biomart database, will take a bit, do not stop the execution')
@@ -247,16 +247,17 @@ for gene_id, functions in go_data.items():
 		continue
 	edgar_fc = edgar_results[gene_id]['fc']
 	deseq_fc = deseq_results[gene_id]['fc']
-	mean_fc = (deseq_fc + edgar_fc) / 2
+	mean_fc = round((deseq_fc + edgar_fc) / 2, 3)
 	for function in functions:
 		gene_name = gene_names[gene_id]
 		barplot_names.append(function)
 		barplot_values.append(mean_fc)
 
-plt.subplots(figsize=(5, 5))
-g = sns.catplot(x=barplot_values, y=barplot_names, orient='v')
-g.set_axis_labels('FC', 'Biological function')
-g.figure.suptitle('Fold Change of each biological function that changed expression')
+g = sns.catplot(x=barplot_values, y=barplot_names, height=7, aspect=1.5, orient='v')
+g.set_axis_labels('FC', 'Biological function', fontsize=13, fontweight='bold')
+g.figure.suptitle('Fold Change of each biological function that changed expression\n\n', fontweight='bold')
+g.fig.set_figwidth(11)
+g.fig.set_figheight(9)
 plt.show()
 
 

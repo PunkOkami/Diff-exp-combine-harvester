@@ -7,3 +7,5 @@ Date	Task
 17.07	Running R inside Python, comparing results of R scripts
 18.07	Comapring results further, tried and failed to ask databases about gene function
 19.07	Connecting with database to ask for gene functions
+20.07	Plotting expression of gene function and working on experiment design files
+21.07	Improving importing data, starting working on importing RSEM data
