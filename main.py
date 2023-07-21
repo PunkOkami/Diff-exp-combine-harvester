@@ -9,7 +9,7 @@ from tqdm import tqdm
 import seaborn as sns
 
 
-def sample_data_construction(sample_names: list[str], design_path: str):
+def sample_data_construction(sample_names: list[str], design_path: str) -> list[str]:
 	# reading experiment design file
 	design = {}
 	design_file = open(design_path)
@@ -22,21 +22,30 @@ def sample_data_construction(sample_names: list[str], design_path: str):
 			design[sample] = group
 	design_file.close()
 	
-	# ordering dictionary according to sample_names
-	index_map = {val: index for index, val in enumerate(sample_names)}
-	design = sorted(design.items(), key=lambda item: index_map[item[0]])
+	# pulling out list of samples in design file and checking if all of them are in sample_names
+	samples_in_design = list(design.keys())
+	for sample in samples_in_design:
+		if sample not in sample_names:
+			print(f'ERROR: sample {sample} file was not found in data directory, but is in experiment design file')
+			exit(0)
 	
-	# Creating table saying what group is what sample is in
+	# ordering dictionary according to sample_names
+	samples_order = {sample: index for index, sample in enumerate(sample_names)}
+	design = sorted(design.items(), key=lambda item: samples_order[item[0]])
+	samples_in_design = [tup[0] for tup in design]
+	
+	# creating table saying what group is what sample is in
 	sample_data_file = open('Workdata/sample_data.tsv', mode='w')
 	sample_data_writer = csv.writer(sample_data_file, delimiter='\t')
 	sample_data_writer.writerow(['Sample_name', 'Sample_group'])
 	for row in design:
 		sample_data_writer.writerow(row)
-	# sample_data_writer.writerow(row)
 	sample_data_file.close()
+	
+	return samples_in_design
 
 
-def salmon_reading_data(data_dir: str, design_file: str):
+def salmon_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str], list[str]):
 	# Finding data files
 	data_paths = Path(data_dir).rglob('quant.genes.sf')
 	
@@ -63,30 +72,8 @@ def salmon_reading_data(data_dir: str, design_file: str):
 			gene_names.append(gene_name)
 		data_dict[sample_name] = data
 		in_file.close()
-	
-	# Putting all data in one single dictionary
-	sample_names = []
-	gene_dict = {gene: [] for gene in gene_names}
-	for sample, genes in data_dict.items():
-		sample_names.append(sample)
-		for gene, count in genes.items():
-			gene_dict[gene].append(count)
-	
-	# Saving data to file to be read into R easily
-	output_file = open('Workdata/de_counts.tsv', mode='w')
-	out_writer = csv.writer(output_file, delimiter='\t')
-	columns_names = ['Gene_ID']
-	columns_names.extend(sample_names)
-	out_writer.writerow(columns_names)
-	for gene, gene_row in gene_dict.items():
-		out_row = [gene]
-		out_row.extend([str(num) for num in gene_row])
-		out_writer.writerow(out_row)
-	output_file.close()
-	
-	# Constructing sample_data file in a way for rows to be in order with colnames in data file
-	sample_data_construction(sample_names, design_file)
-
+	sample_names = list(data_dict.keys())
+	return data_dict, sample_names, gene_names
 
 # argparsing
 parser = argparse.ArgumentParser(prog='Differential Expression Combine Harvester',
@@ -103,14 +90,43 @@ design_file = args.design_filename
 
 # Creating table saying what group is what sample is in
 print('Loading data')
+data_dict = {}
+sample_names = []
+gene_names = []
 # loading data
 if input_type == 'rsem':
 	print('This feature is not supported yet')
 	exit(0)
 elif input_type == 'salmon':
-	salmon_reading_data(data_dir, design_file)
+	data_dict, sample_names, gene_names = salmon_reading_data(data_dir)
 else:
 	print('Incorrect input_type')
+	
+# constructing sample_data file in a way for rows to be in order with colnames in data file
+# also checking limiting samples to sample names in design file
+samples_in_design = sample_data_construction(sample_names, design_file)
+design_order = {sample_name: index for index, sample_name in enumerate(samples_in_design)}
+data_dict = {sample: data for sample, data in data_dict.items() if sample in samples_in_design}
+data_dict = sorted(data_dict.items(), key=lambda item: design_order[item[0]])
+
+# Putting all data in one single dictionary
+gene_dict = {gene: [] for gene in gene_names}
+for sample, genes in data_dict:
+	for gene, count in genes.items():
+		gene_dict[gene].append(count)
+
+# Saving data to file to be read into R easily
+de_counts_file = open('Workdata/de_counts.tsv', mode='w')
+out_writer = csv.writer(de_counts_file, delimiter='\t')
+columns_names = ['Gene_ID']
+columns_names.extend(sample_names)
+out_writer.writerow(columns_names)
+for gene, gene_row in gene_dict.items():
+	out_row = [gene]
+	out_row.extend([str(num) for num in gene_row])
+	out_writer.writerow(out_row)
+de_counts_file.close()
+
 # calling R scripts
 print('Running DESeq2 analysis')
 subprocess.call('Rscript deseq-analysis.R', shell=True)
@@ -209,7 +225,7 @@ genes_in_both.sort()
 venn2([edgar_gene_ids, deseq_gene_ids], set_labels=('EdgaR', 'DESeq2'))
 plt.title('Genes found by two methods')
 plt.savefig('Graphs/Comparison/venn.png', format='png')
-plt.show()
+plt.close()
 
 # finding what biological role genes has accoriding to Biomart database
 print('Connecting to Biomart database, will take a bit, do not stop the execution')
@@ -258,11 +274,11 @@ g.set_axis_labels('FC', 'Biological function', fontsize=13, fontweight='bold')
 g.figure.suptitle('Fold Change of each biological function that changed expression\n\n', fontweight='bold')
 g.fig.set_figwidth(11)
 g.fig.set_figheight(9)
-plt.show()
-
+plt.savefig('Graphs/Comparison/FC_biological_functions.png', format='png')
+plt.close()
 
 # priting info about fc of genes two methods agree on and saving that data to a file
-results_file = open(output_file, mode='w')
+results_file = open(str(output_file), mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}
 results_writer.writerow(['Gene_ID', 'Gene_name', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR', 'biological functions'])
