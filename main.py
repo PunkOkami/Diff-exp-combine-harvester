@@ -278,7 +278,7 @@ plt.savefig('Graphs/Comparison/FC_biological_functions.png', format='png')
 plt.close()
 
 # priting info about fc of genes two methods agree on and saving that data to a file
-results_file = open(str(output_file), mode='w')
+results_file = open(output_file, mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}
 results_writer.writerow(['Gene_ID', 'Gene_name', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR', 'biological functions'])
