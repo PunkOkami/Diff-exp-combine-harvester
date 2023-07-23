@@ -9,42 +9,6 @@ from tqdm import tqdm
 import seaborn as sns
 
 
-def sample_data_construction(sample_names: list[str], design_path: str) -> list[str]:
-	# reading experiment design file
-	design = {}
-	design_file = open(design_path)
-	for line in design_file:
-		line = line.strip()
-		line = line.split(': ')
-		group = line[0]
-		samples = line[1].split(', ')
-		for sample in samples:
-			design[sample] = group
-	design_file.close()
-	
-	# pulling out list of samples in design file and checking if all of them are in sample_names
-	samples_in_design = list(design.keys())
-	for sample in samples_in_design:
-		if sample not in sample_names:
-			print(f'ERROR: sample {sample} file was not found in data directory, but is in experiment design file')
-			exit(0)
-	
-	# ordering dictionary according to sample_names
-	samples_order = {sample: index for index, sample in enumerate(sample_names)}
-	design = sorted(design.items(), key=lambda item: samples_order[item[0]])
-	samples_in_design = [tup[0] for tup in design]
-	
-	# creating table saying what group is what sample is in
-	sample_data_file = open('Workdata/sample_data.tsv', mode='w')
-	sample_data_writer = csv.writer(sample_data_file, delimiter='\t')
-	sample_data_writer.writerow(['Sample_name', 'Sample_group'])
-	for row in design:
-		sample_data_writer.writerow(row)
-	sample_data_file.close()
-	
-	return samples_in_design
-
-
 def salmon_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str], list[str]):
 	# Finding data files
 	data_paths = Path(data_dir).rglob('quant.genes.sf')
@@ -75,6 +39,7 @@ def salmon_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str
 	sample_names = list(data_dict.keys())
 	return data_dict, sample_names, gene_names
 
+
 # argparsing
 parser = argparse.ArgumentParser(prog='Differential Expression Combine Harvester',
 								description='This program is for robust differential expression analysis with one terminal command')
@@ -86,7 +51,7 @@ args = parser.parse_args()
 data_dir = args.dirname
 input_type = args.input_type
 output_file = args.out_file
-design_file = args.design_filename
+design_path = args.design_filename
 
 # Creating table saying what group is what sample is in
 print('Loading data')
@@ -104,7 +69,39 @@ else:
 	
 # constructing sample_data file in a way for rows to be in order with colnames in data file
 # also checking limiting samples to sample names in design file
-samples_in_design = sample_data_construction(sample_names, design_file)
+# reading experiment design file
+design = {}
+design_file = open(design_path)
+for line in design_file:
+	line = line.strip()
+	line = line.split(': ')
+	group = line[0]
+	samples = line[1].split(', ')
+	for sample in samples:
+		design[sample] = group
+design_file.close()
+
+# pulling out list of samples in design file and checking if all of them are in sample_names
+samples_in_design = list(design.keys())
+for sample in samples_in_design:
+	if sample not in sample_names:
+		print(f'ERROR: sample {sample} file was not found in data directory, but is in experiment design file')
+		exit(0)
+
+# ordering dictionary according to sample_names
+samples_order = {sample: index for index, sample in enumerate(sample_names)}
+design = sorted(design.items(), key=lambda item: samples_order[item[0]])
+samples_in_design = [tup[0] for tup in design]
+
+# creating table saying what group is what sample is in
+sample_data_file = open('Workdata/sample_data.tsv', mode='w')
+sample_data_writer = csv.writer(sample_data_file, delimiter='\t')
+sample_data_writer.writerow(['Sample_name', 'Sample_group'])
+for row in design:
+	sample_data_writer.writerow(row)
+sample_data_file.close()
+
+# Ordering samples to fit order in samples_in_design
 design_order = {sample_name: index for index, sample_name in enumerate(samples_in_design)}
 data_dict = {sample: data for sample, data in data_dict.items() if sample in samples_in_design}
 data_dict = sorted(data_dict.items(), key=lambda item: design_order[item[0]])
