@@ -28,7 +28,7 @@ def rsem_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str],
 		for line in reader:
 			if first_line:
 				name_index = line.index('gene_id')
-				counts_index = line.index('expected_count')
+				counts_index = line.index('FPKM')
 				first_line = False
 				continue
 			gene_name = line[name_index]
@@ -303,29 +303,43 @@ for i,  gene_id in enumerate(genes_in_both):
 		sleep(60)
 pbar.close()
 
-# constructing barplot_data
-barplot_names = []
-barplot_values = []
+# constructing catplot_data to show catplot of functions that changed the most
+catplot_data = {}
 for gene_id, functions in go_data.items():
 	if functions == ['Unknown']:
 		continue
-	edgar_fc = edgar_results[gene_id]['fc']
-	deseq_fc = deseq_results[gene_id]['fc']
-	mean_fc = round((deseq_fc + edgar_fc) / 2, 3)
+	edgar_log_fc = edgar_results[gene_id]['log_fc']
+	deseq_log_fc = deseq_results[gene_id]['log_fc']
+	mean_fc = round((deseq_log_fc + edgar_log_fc) / 2, 3)
 	for function in functions:
-		gene_name = gene_names[gene_id]
-		barplot_names.append(function)
-		barplot_values.append(mean_fc)
+		mean_fcs = catplot_data.get(function, [])
+		mean_fcs.append(mean_fc)
+		catplot_data[function] = mean_fcs
 
-g = sns.catplot(x=barplot_values, y=barplot_names, height=7, aspect=1.5, orient='v')
-g.set_axis_labels('FC', 'Biological function', fontsize=13, fontweight='bold')
-g.figure.suptitle('Fold Change of each biological function that changed expression\n\n', fontweight='bold')
+# sorting data and selecting functions that have highest
+catplot_data = sorted(catplot_data.items(), key=lambda tup: max(list(map(abs, tup[1]))), reverse=True)
+catplot_names = []
+catplot_values = []
+goal = 0
+for i, tup in enumerate(catplot_data):
+	values = tup[1]
+	if i <= 50 or max(list(map(abs, values))) == goal:
+		catplot_values.extend(values)
+		catplot_names.extend([tup[0] for i in range(len(values))])
+	else:
+		break
+	if i == 50:
+		goal = max(list(map(abs, values)))
+# plotting function expression change
+g = sns.catplot(x=catplot_values, y=catplot_names, height=7, aspect=1.5, orient='v')
+g.set_axis_labels('log FC', 'Biological function', fontsize=13, fontweight='bold')
+g.figure.suptitle('Fold Change of biological functions with biggest change in expression\n\n', fontweight='bold')
 g.fig.set_figwidth(11)
 g.fig.set_figheight(9)
 plt.savefig('Graphs/Comparison/FC_biological_functions.png', format='png')
 plt.close()
 
-# priting info about fc of genes two methods agree on and saving that data to a file
+# printing info about fc of genes two methods agree on and saving that data to a file
 results_file = open(output_file, mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}

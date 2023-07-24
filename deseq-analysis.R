@@ -53,13 +53,19 @@ small_padj_x_high_fc = intersect(rownames(res), high_fc)
 png(filename = 'Graphs/DESeq2/Vulcano.png')
 with(res, plot(log2FoldChange, -log10(pvalue), pch = 20, main = "Volcano plot", col = 'blue'))
 with(subset(res, padj < 0.05 & abs(log2FoldChange) > 1.5), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red"))
+legend(-8, 220,  legend = c('absolute FC < 1.5', 'absolute FC > 1.5'), col = c('blue', 'red'))
 garbage = dev.off()
 
 # creating heatmap of counts of genes with high FC
 important_genes_counts = count_data[which(rownames(count_data) %in% small_padj_x_high_fc), ]
 important_genes_counts = sweep(important_genes_counts, 2, sizeFactors(dds), '/')
-pheatmap(important_genes_counts, cluster_cols = FALSE,
+if (nrow(important_genes_counts) <= 50) {
+  fontsize = round(10/(nrow(important_genes_counts)%%15), digits = 2)
+  if (fontsize == 0){fontsize = 10}
+  pheatmap(important_genes_counts, cluster_cols = FALSE, fontsize_row = fontsize,
          color = hcl.colors(50, "plasma"), filename = 'Graphs/DESeq2/heatmap.png')
+} else {print("Heatmap of counts for genes with high fc would be unreadable, won't be plotted")}
+
 
 # performing and ploting PCA
 png(filename = 'Graphs/DESeq2/PCA_plot.png')
