@@ -7,8 +7,7 @@ import argparse
 from biomart import BiomartServer
 from tqdm import tqdm
 import seaborn as sns
-
-FC_CUT_OFF = 3
+from time import sleep
 
 
 def rsem_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str], list[str]):
@@ -81,12 +80,15 @@ parser = argparse.ArgumentParser(prog='Differential Expression Combine Harvester
 parser.add_argument('dirname', help='path to directory containing results of one of supported programs, seek input_type')
 parser.add_argument('input_type', help='one of [salmon, rsem]. Specifies what program was used to calculate gene counts')
 parser.add_argument('design_filename', help='path to file explaining experiment design, see README for information how to write one')
-parser.add_argument('-o', '--out_file', help='Optional argument used to specify where save results in tsv', default='de_results.tsv')
+parser.add_argument('-o', '--out_file', help='Optional argument used to specify where save results in tsv', default='[input_type]_de_results.tsv')
+parser.add_argument('-fc', '--fc_cut_off', help='Cut off for fc values when selecting genes to be analysed by comparison, defualts to 1.5', default=1.5, type=float)
 args = parser.parse_args()
 data_dir = args.dirname
 input_type = args.input_type
-output_file = args.out_file
+output_file = '_'.join(args.out_file.split('_')[2:])
+output_file = f'{input_type}_{output_file}'
 design_path = args.design_filename
+fc_cut_off = args.fc_cut_off
 
 # Creating table saying what group is what sample is in
 print('Loading data')
@@ -197,7 +199,7 @@ for i, (gene_id, gene_data) in enumerate(deseq_results.items()):
 	print(f'{gene_id} - {gene_data["padj"]}')
 print('\n\n')
 
-deseq_results = {gene: gene_data for gene, gene_data in deseq_results.items() if abs(gene_data['log_fc']) > FC_CUT_OFF}
+deseq_results = {gene: gene_data for gene, gene_data in deseq_results.items() if abs(gene_data['log_fc']) > fc_cut_off}
 deseq_results = dict(sorted(deseq_results.items(), key=lambda gene: gene[1]['fc']))
 print(f'There is {len(deseq_results)} genes with Fold Change biologically relevant, showing first 5')
 print('Gene ID - Fold Change - p-adj')
@@ -241,7 +243,7 @@ for i, (gene, gene_data) in enumerate(edgar_results.items()):
 	print(f'{gene} - {gene_data["padj"]}')
 print('\n\n')
 
-edgar_results = {gene: gene_data for gene, gene_data in edgar_results.items() if abs(gene_data['log_fc']) > FC_CUT_OFF}
+edgar_results = {gene: gene_data for gene, gene_data in edgar_results.items() if abs(gene_data['log_fc']) > fc_cut_off}
 edgar_results = dict(sorted(edgar_results.items(), key=lambda gene: gene[1]['fc']))
 print(f'There are {len(edgar_results)} genes with Fold Change biologically relevant, showing first 5')
 print('Gene ID - Fold Change - p-adj')
@@ -257,6 +259,7 @@ print('\n\n')
 print('COMPARING RESULTS')
 genes_in_both = list(deseq_gene_ids.intersection(edgar_gene_ids))
 genes_in_both.sort()
+print(f'There are {len(genes_in_both)} that both methods agree on')
 venn2([edgar_gene_ids, deseq_gene_ids], set_labels=('EdgaR', 'DESeq2'))
 plt.title('Genes found by two methods')
 plt.savefig('Graphs/Comparison/venn.png', format='png')
@@ -274,13 +277,18 @@ attributes = ['name_1006', 'namespace_1003', 'external_gene_name']
 go_data = {}
 gene_names = {}
 print('Asking about genes')
+if len(genes_in_both) > 100:
+	print('There are more than 100 genes to ask about, requests will be cut into chunks of 100 to limit traffic.')
+	print('All genes will be asked about, it will just take some time')
 pbar = tqdm(total=len(genes_in_both), desc='Processing genes')
-for gene_id in genes_in_both:
-	gene_id = gene_id.split('.')[0]
-	response = ensembl_mart.search({'attributes': attributes, 'filters': {'ensembl_gene_id': gene_id}})
+for i,  gene_id in enumerate(genes_in_both):
+	go_terms = []
+	gene_name = ''
+	response = ensembl_mart.search({'attributes': attributes, 'filters': {'ensembl_gene_id': gene_id.split('.')[0]}})
 	response = response.raw.data.decode('utf-8').split('\n')[:-1]
-	go_terms = [line.split('\t')[0] for line in response if line.split('\t')[1] == 'biological_process'][:-1]
-	gene_name = response[0].split('\t')[-1]
+	if len(response) != 0:
+		go_terms = [line.split('\t')[0] for line in response if line.split('\t')[1] == 'biological_process'][:-1]
+		gene_name = response[0].split('\t')[-1]
 	if gene_name == '':
 		gene_name = 'NA'
 	gene_names[gene_id] = gene_name
@@ -289,6 +297,10 @@ for gene_id in genes_in_both:
 	else:
 		go_data[gene_id] = go_terms
 	pbar.update(1)
+	i += 1
+	if i % 100 == 0:
+		print('Waiting 1 minute')
+		sleep(60)
 pbar.close()
 
 # constructing barplot_data
