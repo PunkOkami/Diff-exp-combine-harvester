@@ -336,6 +336,7 @@ g.set_axis_labels('log FC', 'Biological function', fontsize=13, fontweight='bold
 g.figure.suptitle('Fold Change of biological functions with biggest change in expression\n\n', fontweight='bold')
 g.fig.set_figwidth(11)
 g.fig.set_figheight(9)
+g.set(xticklabels=[])
 plt.savefig('Graphs/Comparison/FC_biological_functions.png', format='png')
 plt.close()
 
