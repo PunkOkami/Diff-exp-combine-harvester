@@ -8,12 +8,46 @@ from biomart import BiomartServer
 from tqdm import tqdm
 import seaborn as sns
 
+FC_CUT_OFF = 3
+
+
+def rsem_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str], list[str]):
+	# searching provided dir to find all files matching rsem output
+	data_paths = Path(data_dir).rglob('*.genes.results')
+	
+	# reading data from files and combining them into one big object
+	data_dict = {}
+	gene_names = []
+	for path in data_paths:
+		sample_name = path.name.split('.')[0]
+		in_file = open(path)
+		reader = csv.reader(in_file, delimiter='\t')
+		first_line = True
+		name_index = 0
+		counts_index = 0
+		data = {}
+		for line in reader:
+			if first_line:
+				name_index = line.index('gene_id')
+				counts_index = line.index('expected_count')
+				first_line = False
+				continue
+			gene_name = line[name_index]
+			gene_count = round(float(line[counts_index]))
+			data[gene_name] = gene_count
+			gene_names.append(gene_name)
+		data_dict[sample_name] = data
+		in_file.close()
+	sample_names = list(data_dict.keys())
+	
+	return data_dict, sample_names, gene_names
+
 
 def salmon_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str], list[str]):
-	# Finding data files
+	# searching provided dir to find all files matching salmon output
 	data_paths = Path(data_dir).rglob('quant.genes.sf')
 	
-	# Reading data from files and combining them into one big object
+	# reading data from files and combining them into one big object
 	data_dict = {}
 	gene_names = []
 	for path in data_paths:
@@ -37,6 +71,7 @@ def salmon_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str
 		data_dict[sample_name] = data
 		in_file.close()
 	sample_names = list(data_dict.keys())
+	
 	return data_dict, sample_names, gene_names
 
 
@@ -60,13 +95,12 @@ sample_names = []
 gene_names = []
 # loading data
 if input_type == 'rsem':
-	print('This feature is not supported yet')
-	exit(0)
+	data_dict, sample_names, gene_names = rsem_reading_data(data_dir)
 elif input_type == 'salmon':
 	data_dict, sample_names, gene_names = salmon_reading_data(data_dir)
 else:
 	print('Incorrect input_type')
-	
+
 # constructing sample_data file in a way for rows to be in order with colnames in data file
 # also checking limiting samples to sample names in design file
 # reading experiment design file
@@ -116,7 +150,7 @@ for sample, genes in data_dict:
 de_counts_file = open('Workdata/de_counts.tsv', mode='w')
 out_writer = csv.writer(de_counts_file, delimiter='\t')
 columns_names = ['Gene_ID']
-columns_names.extend(sample_names)
+columns_names.extend(samples_in_design)
 out_writer.writerow(columns_names)
 for gene, gene_row in gene_dict.items():
 	out_row = [gene]
@@ -163,14 +197,16 @@ for i, (gene_id, gene_data) in enumerate(deseq_results.items()):
 	print(f'{gene_id} - {gene_data["padj"]}')
 print('\n\n')
 
-deseq_results = {gene: gene_data for gene, gene_data in deseq_results.items() if abs(gene_data['log_fc']) > 1.5}
+deseq_results = {gene: gene_data for gene, gene_data in deseq_results.items() if abs(gene_data['log_fc']) > FC_CUT_OFF}
 deseq_results = dict(sorted(deseq_results.items(), key=lambda gene: gene[1]['fc']))
-print(f'There is {len(deseq_results)} genes with Fold Change biologically relevant')
+print(f'There is {len(deseq_results)} genes with Fold Change biologically relevant, showing first 5')
 print('Gene ID - Fold Change - p-adj')
 deseq_gene_ids = set()
-for gene, gene_data in deseq_results.items():
+for i,  (gene, gene_data) in enumerate(deseq_results.items()):
 	deseq_gene_ids.add(gene)
-	print(f'{gene} - {gene_data["fc"]} - {gene_data["padj"]}')
+	if i < 6:
+		print(f'{gene} - {gene_data["fc"]} - {gene_data["padj"]}')
+	i += 1
 print('\n\n')
 
 # loading results from EdgeR script and doing subtle result analysis
@@ -205,14 +241,16 @@ for i, (gene, gene_data) in enumerate(edgar_results.items()):
 	print(f'{gene} - {gene_data["padj"]}')
 print('\n\n')
 
-edgar_results = {gene: gene_data for gene, gene_data in edgar_results.items() if abs(gene_data['log_fc']) > 1.5}
+edgar_results = {gene: gene_data for gene, gene_data in edgar_results.items() if abs(gene_data['log_fc']) > FC_CUT_OFF}
 edgar_results = dict(sorted(edgar_results.items(), key=lambda gene: gene[1]['fc']))
-print(f'There are {len(edgar_results)} genes with Fold Change biologically relevant')
+print(f'There are {len(edgar_results)} genes with Fold Change biologically relevant, showing first 5')
 print('Gene ID - Fold Change - p-adj')
 edgar_gene_ids = set()
-for gene, gene_data in edgar_results.items():
+for i, (gene, gene_data) in enumerate(edgar_results.items()):
 	edgar_gene_ids.add(gene)
-	print(f'{gene} - {gene_data["fc"]} - {gene_data["padj"]}')
+	if i < 6 :
+		print(f'{gene} - {gene_data["fc"]} - {gene_data["padj"]}')
+	i += 1
 print('\n\n')
 
 # comparing results from two methods by Venn diagram showing how many genes overlap
@@ -238,6 +276,7 @@ gene_names = {}
 print('Asking about genes')
 pbar = tqdm(total=len(genes_in_both), desc='Processing genes')
 for gene_id in genes_in_both:
+	gene_id = gene_id.split('.')[0]
 	response = ensembl_mart.search({'attributes': attributes, 'filters': {'ensembl_gene_id': gene_id}})
 	response = response.raw.data.decode('utf-8').split('\n')[:-1]
 	go_terms = [line.split('\t')[0] for line in response if line.split('\t')[1] == 'biological_process'][:-1]
