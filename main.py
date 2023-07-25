@@ -258,7 +258,7 @@ print('\n\n')
 print('COMPARING RESULTS')
 genes_in_both = list(deseq_gene_ids.intersection(edgar_gene_ids))
 genes_in_both.sort()
-print(f'There are {len(genes_in_both)} that both methods agree on')
+print(f'There are {len(genes_in_both)} genes that both methods agree on')
 venn2([edgar_gene_ids, deseq_gene_ids], set_labels=('EdgaR', 'DESeq2'))
 plt.title('Genes found by two methods')
 plt.savefig('Graphs/Comparison/venn.png', format='png')
@@ -322,6 +322,7 @@ de_functions_writer.writerow(['Biological_function', 'values_of_FC'])
 catplot_data = sorted(catplot_data.items(), key=lambda tup: max(list(map(abs, tup[1]))), reverse=True)
 catplot_names = []
 catplot_values = []
+catplot_hue = []
 goal = 0
 for i, tup in enumerate(catplot_data):
 	function = tup[0]
@@ -329,6 +330,7 @@ for i, tup in enumerate(catplot_data):
 	if i <= 50 or max(list(map(abs, values))) == goal:
 		catplot_values.extend(values)
 		catplot_names.extend([function for i in range(len(values))])
+		catplot_hue.extend([True if value > 0 else False for value in values])
 	else:
 		break
 	if i == 50:
@@ -338,7 +340,8 @@ for i, tup in enumerate(catplot_data):
 	writer_row = [function, values]
 	de_functions_writer.writerow(writer_row)
 # plotting function expression change
-g = sns.catplot(x=catplot_values, y=catplot_names, height=7, aspect=1.5, orient='v')
+catplot_data = {'names': catplot_names, 'values': catplot_values, 'Change': catplot_hue}
+g = sns.catplot(catplot_data, x='values', y='names', hue='Change',  height=7, aspect=1.5, orient='v', palette='dark')
 g.set_axis_labels('log FC', 'Biological function', fontsize=13, fontweight='bold')
 g.figure.suptitle('Fold Change of biological functions with biggest change in expression\n\n', fontweight='bold')
 g.fig.set_figwidth(11)
