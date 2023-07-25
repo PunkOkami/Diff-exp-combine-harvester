@@ -42,11 +42,11 @@ plotSmear(edgar_results, de.tags = important_genes, main = 'Mean difference plot
 garbage = dev.off()
 
 important_genes_counts = count_data[which(rownames(count_data) %in% important_genes), ]
-if (nrow(important_genes_counts) <= 50) {
+if (nrow(important_genes_counts) <= 75) {
   fontsize = round(10/(nrow(important_genes_counts)%%15), digits = 2)
   if (fontsize == 0){fontsize = 10}
   pheatmap(important_genes_counts, cluster_cols = FALSE, fontsize_row = fontsize,
-         color = hcl.colors(50, "plasma"), filename = 'Graphs/DESeq2/heatmap.png')
+         color = hcl.colors(50, "plasma"), filename = 'Graphs/edgeR/counts_heatmap.png')
 } else {print("Heatmap of counts for genes with high fc would be unreadable, won't be plotted")}
 
 # geting results of de

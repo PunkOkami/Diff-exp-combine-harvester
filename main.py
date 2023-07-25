@@ -28,7 +28,7 @@ def rsem_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str],
 		for line in reader:
 			if first_line:
 				name_index = line.index('gene_id')
-				counts_index = line.index('FPKM')
+				counts_index = line.index('expected_count')
 				first_line = False
 				continue
 			gene_name = line[name_index]
@@ -80,13 +80,12 @@ parser = argparse.ArgumentParser(prog='Differential Expression Combine Harvester
 parser.add_argument('dirname', help='path to directory containing results of one of supported programs, seek input_type')
 parser.add_argument('input_type', help='one of [salmon, rsem]. Specifies what program was used to calculate gene counts')
 parser.add_argument('design_filename', help='path to file explaining experiment design, see README for information how to write one')
-parser.add_argument('-o', '--out_file', help='Optional argument used to specify where save results in tsv', default='[input_type]_de_results.tsv')
+parser.add_argument('-o', '--out_dir', help='Optional argument used to specify what directory save results to, defaults to cwd', default=Path.cwd(), type=Path)
 parser.add_argument('-fc', '--fc_cut_off', help='Cut off for fc values when selecting genes to be analysed by comparison, defualts to 1.5', default=1.5, type=float)
 args = parser.parse_args()
 data_dir = args.dirname
 input_type = args.input_type
-output_file = '_'.join(args.out_file.split('_')[2:])
-output_file = f'{input_type}_{output_file}'
+output_dir = args.out_dir
 design_path = args.design_filename
 fc_cut_off = args.fc_cut_off
 
@@ -317,19 +316,27 @@ for gene_id, functions in go_data.items():
 		catplot_data[function] = mean_fcs
 
 # sorting data and selecting functions that have highest
+de_functions_file = open(Path(output_dir, 'de_functions.tsv'), mode='w')
+de_functions_writer = csv.writer(de_functions_file, delimiter='\t')
+de_functions_writer.writerow(['Biological_function', 'values_of_FC'])
 catplot_data = sorted(catplot_data.items(), key=lambda tup: max(list(map(abs, tup[1]))), reverse=True)
 catplot_names = []
 catplot_values = []
 goal = 0
 for i, tup in enumerate(catplot_data):
+	function = tup[0]
 	values = tup[1]
 	if i <= 50 or max(list(map(abs, values))) == goal:
 		catplot_values.extend(values)
-		catplot_names.extend([tup[0] for i in range(len(values))])
+		catplot_names.extend([function for i in range(len(values))])
 	else:
 		break
 	if i == 50:
 		goal = max(list(map(abs, values)))
+	values = [str(val) for val in values]
+	values = ', '.join(values)
+	writer_row = [function, values]
+	de_functions_writer.writerow(writer_row)
 # plotting function expression change
 g = sns.catplot(x=catplot_values, y=catplot_names, height=7, aspect=1.5, orient='v')
 g.set_axis_labels('log FC', 'Biological function', fontsize=13, fontweight='bold')
@@ -341,7 +348,7 @@ plt.savefig('Graphs/Comparison/FC_biological_functions.png', format='png')
 plt.close()
 
 # printing info about fc of genes two methods agree on and saving that data to a file
-results_file = open(output_file, mode='w')
+results_file = open(Path(output_dir, 'de_results.tsv'), mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}
 results_writer.writerow(['Gene_ID', 'Gene_name', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR', 'biological functions'])
@@ -361,4 +368,4 @@ for gene_id in genes_in_both:
 	row = [gene_id, gene_name, deseq_fc, edgar_fc, ratio, deseq_padj, edgar_padj, bio_func]
 	results_writer.writerow(row)
 print('\n\n')
-print(f'Result tsv table saved to {output_file}')
+print(f'Result tsv table saved to De_results.tsv')

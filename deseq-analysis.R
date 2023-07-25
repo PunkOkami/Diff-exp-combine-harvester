@@ -59,7 +59,7 @@ garbage = dev.off()
 # creating heatmap of counts of genes with high FC
 important_genes_counts = count_data[which(rownames(count_data) %in% small_padj_x_high_fc), ]
 important_genes_counts = sweep(important_genes_counts, 2, sizeFactors(dds), '/')
-if (nrow(important_genes_counts) <= 50) {
+if (nrow(important_genes_counts) <= 75) {
   fontsize = round(10/(nrow(important_genes_counts)%%15), digits = 2)
   if (fontsize == 0){fontsize = 10}
   pheatmap(important_genes_counts, cluster_cols = FALSE, fontsize_row = fontsize,
