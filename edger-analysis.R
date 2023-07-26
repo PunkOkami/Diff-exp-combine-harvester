@@ -4,6 +4,15 @@ suppressPackageStartupMessages(library(edgeR))
 suppressPackageStartupMessages(library(pheatmap))
 suppressPackageStartupMessages(library(readr))
 
+# parsing args
+args = commandArgs(trailingOnly = TRUE)
+workspace = args[1]
+output_dir = args[2]
+
+# setting wd to where program is located
+setwd(workspace)
+
+
 # reading data about sample groups from file produced in Python
 sample_data = suppressMessages(read_delim('Workdata/sample_data.tsv', delim = '\t', show_col_types = FALSE))
 sample_data = data.frame(sample_data)
@@ -24,6 +33,9 @@ edgar_data = DGEList(count_data, group = sample_data$sample_group)
 edgar_data = calcNormFactors(edgar_data)
 edgar_data = estimateCommonDisp(edgar_data)
 edgar_data = estimateTagwiseDisp(edgar_data)
+
+# settiong wd to output_dir to put graphs where needed
+setwd(output_dir)
 
 # plots MDS plot to show how samples compare
 png(filename = 'Graphs/edgeR/MDS_plot.png')
@@ -54,6 +66,9 @@ edgar_results = topTags(edgar_results, n=Inf)
 edgar_results = edgar_results$table
 edgar_results = edgar_results[edgar_results$FDR < 0.05 & complete.cases(edgar_results$FDR), ]
 edgar_results = edgar_results[order(edgar_results$FDR, decreasing = FALSE), ]
+
+# jumping back to where code is placed to save workdata properly
+setwd(workspace)
 
 # saving data to a file
 edgar_results =  cbind(data.frame(GeneID=rownames(edgar_results), Fold_change=2^edgar_results$logFC), edgar_results)

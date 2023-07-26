@@ -7,6 +7,14 @@ suppressPackageStartupMessages(library(gplots))
 suppressPackageStartupMessages(library(RColorBrewer))
 suppressPackageStartupMessages(library(readr))
 
+# parsing args
+args = commandArgs(trailingOnly = TRUE)
+workspace = args[1]
+output_dir = args[2]
+
+# setting wd to where program is located
+setwd(workspace)
+
 # reading data about sample groups from file produced in Python
 sample_data = suppressMessages(read_delim('Workdata/sample_data.tsv', delim = '\t', show_col_types = FALSE))
 sample_data = data.frame(sample_data)
@@ -30,6 +38,9 @@ dds = DESeq(deseq2_data, quiet = TRUE)
 res = results(dds)
 res =  res[complete.cases(res$padj) & res$padj < 0.05, ]
 res =  res[order(res$padj), ]
+
+# settiong wd to output_dir to put graphs where needed
+setwd(output_dir)
 
 # ploitting MA visualisation
 png(filename = 'Graphs/DESeq2/MA_plot.png')
@@ -81,6 +92,9 @@ hmcol = colorRampPalette(brewer.pal(9, 'PRGn'))(100)
 png(filename = 'Graphs/DESeq2/sample_to_sample_heatmap.png')
 heatmap.2(dist_mat, Rowv = as.dendrogram(hc), symm = TRUE, trace = "none", col = rev(hmcol), margin = c(13, 13))
 garbage = dev.off()
+
+# jumping back to where code is placed to save workdata properly
+setwd(workspace)
 
 res = cbind(data.frame(GeneID = rownames(res), Fold_change=2^res$log2FoldChange), data.frame(res))
 # saving filtered results to tsv file

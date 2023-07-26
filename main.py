@@ -173,9 +173,9 @@ for dir_name in ['Comparison', 'DESeq2', 'edgeR']:
 
 # calling R scripts
 print('Running DESeq2 analysis')
-subprocess.call(f'Rscript {Path(scripts_wd, "deseq-analysis.R")}', shell=True)
+subprocess.call(f'Rscript {Path(scripts_wd, "deseq-analysis.R")} {scripts_wd} {output_dir}', shell=True)
 print('Running EdgeR analysis')
-subprocess.call(f'Rscript {Path(scripts_wd, "edger-analysis.R")}', shell=True)
+subprocess.call(f'Rscript {Path(scripts_wd, "edger-analysis.R")} {scripts_wd} {output_dir}', shell=True)
 print('DE ANALYSIS COMPLETE, LOADING RESULTS')
 
 # loading results from DESeq2 script
@@ -211,7 +211,7 @@ print(f'There is {len(deseq_results)} genes with Fold Change biologically releva
 print('\n\n')
 print('Reading EdgeR results')
 # loading results from EdgeR script
-edgar_results_file = open(scripts_wd, 'Workdata/edger_results.tsv')
+edgar_results_file = open(Path(scripts_wd, 'Workdata/edger_results.tsv'))
 edgar_reader = csv.reader(edgar_results_file, delimiter='\t')
 first_line = True
 edgar_results = {}
