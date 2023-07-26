@@ -81,13 +81,16 @@ parser.add_argument('dirname', help='path to directory containing results of one
 parser.add_argument('input_type', help='one of [salmon, rsem]. Specifies what program was used to calculate gene counts')
 parser.add_argument('design_filename', help='path to file explaining experiment design, see README for information how to write one')
 parser.add_argument('-o', '--out_dir', help='Optional argument used to specify what directory save results to, defaults to cwd', default=Path.cwd(), type=Path)
-parser.add_argument('-fc', '--fc_cut_off', help='Cut off for fc values when selecting genes to be analysed by comparison, defualts to 1.5', default=1.5, type=float)
+parser.add_argument('-fc', '--fc_cut_off', help='Cut off for log fc values when selecting genes to be analysed by comparison, defualts to 1.5', default=1.5, type=float)
 args = parser.parse_args()
 data_dir = args.dirname
 input_type = args.input_type
 output_dir = args.out_dir
 design_path = args.design_filename
 fc_cut_off = args.fc_cut_off
+scripts_wd = Path(__file__).parent
+
+print('RUNNING DE ANALYSIS')
 
 # Creating table saying what group is what sample is in
 print('Loading data')
@@ -128,8 +131,11 @@ samples_order = {sample: index for index, sample in enumerate(sample_names)}
 design = sorted(design.items(), key=lambda item: samples_order[item[0]])
 samples_in_design = [tup[0] for tup in design]
 
+# creating Workdata dir just in case it does not exist yet to have some space for files needed internally
+Path(scripts_wd, 'Workdata').mkdir(exist_ok=True)
+
 # creating table saying what group is what sample is in
-sample_data_file = open('Workdata/sample_data.tsv', mode='w')
+sample_data_file = open(Path(scripts_wd, 'Workdata/sample_data.tsv'), mode='w')
 sample_data_writer = csv.writer(sample_data_file, delimiter='\t')
 sample_data_writer.writerow(['Sample_name', 'Sample_group'])
 for row in design:
@@ -148,7 +154,7 @@ for sample, genes in data_dict:
 		gene_dict[gene].append(count)
 
 # Saving data to file to be read into R easily
-de_counts_file = open('Workdata/de_counts.tsv', mode='w')
+de_counts_file = open(Path(scripts_wd, 'Workdata/de_counts.tsv'), mode='w')
 out_writer = csv.writer(de_counts_file, delimiter='\t')
 columns_names = ['Gene_ID']
 columns_names.extend(samples_in_design)
@@ -159,15 +165,21 @@ for gene, gene_row in gene_dict.items():
 	out_writer.writerow(out_row)
 de_counts_file.close()
 
+# making sure there is directory to save all Graphs
+graphs_dir = Path(output_dir, 'Graphs')
+graphs_dir.mkdir(exist_ok=True)
+for dir_name in ['Comparison', 'DESeq2', 'edgeR']:
+	Path(graphs_dir, dir_name).mkdir(exist_ok=True)
+
 # calling R scripts
 print('Running DESeq2 analysis')
-subprocess.call('Rscript deseq-analysis.R', shell=True)
+subprocess.call(f'Rscript {Path(scripts_wd, "deseq-analysis.R")}', shell=True)
 print('Running EdgeR analysis')
-subprocess.call('Rscript edger-analysis.R', shell=True)
-print('DE analysis complete, loading results')
+subprocess.call(f'Rscript {Path(scripts_wd, "edger-analysis.R")}', shell=True)
+print('DE ANALYSIS COMPLETE, LOADING RESULTS')
 
-# loading results from DESeq2 script and doing subtle result analysis
-deseq_results_file = open('Workdata/DESeq_results.tsv')
+# loading results from DESeq2 script
+deseq_results_file = open(Path(scripts_wd, 'Workdata/DESeq_results.tsv'))
 deseq_reader = csv.reader(deseq_results_file, delimiter='\t')
 first_line = True
 deseq_results = {}
@@ -188,30 +200,18 @@ for line in deseq_reader:
 	deseq_results[gene_id] = gene_data
 deseq_results_file.close()
 
-print('Analysing DESeq results')
 print('\n\n')
-print('6 genes with smallest p-adj:')
-print(f'Gene ID - p-adj')
-for i, (gene_id, gene_data) in enumerate(deseq_results.items()):
-	if i > 5:
-		break
-	print(f'{gene_id} - {gene_data["padj"]}')
-print('\n\n')
+print('Reading DESeq results')
 
 deseq_results = {gene: gene_data for gene, gene_data in deseq_results.items() if abs(gene_data['log_fc']) > fc_cut_off}
 deseq_results = dict(sorted(deseq_results.items(), key=lambda gene: gene[1]['fc']))
-print(f'There is {len(deseq_results)} genes with Fold Change biologically relevant, showing first 5')
-print('Gene ID - Fold Change - p-adj')
-deseq_gene_ids = set()
-for i,  (gene, gene_data) in enumerate(deseq_results.items()):
-	deseq_gene_ids.add(gene)
-	if i < 6:
-		print(f'{gene} - {gene_data["fc"]} - {gene_data["padj"]}')
-	i += 1
-print('\n\n')
+deseq_gene_ids = set(deseq_results.keys())
+print(f'There is {len(deseq_results)} genes with Fold Change biologically relevant')
 
-# loading results from EdgeR script and doing subtle result analysis
-edgar_results_file = open('Workdata/edger_results.tsv')
+print('\n\n')
+print('Reading EdgeR results')
+# loading results from EdgeR script
+edgar_results_file = open(scripts_wd, 'Workdata/edger_results.tsv')
 edgar_reader = csv.reader(edgar_results_file, delimiter='\t')
 first_line = True
 edgar_results = {}
@@ -232,29 +232,14 @@ for line in edgar_reader:
 	edgar_results[gene_id] = gene_data
 edgar_results_file.close()
 
-print('Analysing EdgeR results')
-print('\n\n')
-print('6 genes with smallest p-adj:')
-print(f'Gene ID - p-adj')
-for i, (gene, gene_data) in enumerate(edgar_results.items()):
-	if i > 5:
-		break
-	print(f'{gene} - {gene_data["padj"]}')
-print('\n\n')
-
+# filtering results by fc_cut_off
 edgar_results = {gene: gene_data for gene, gene_data in edgar_results.items() if abs(gene_data['log_fc']) > fc_cut_off}
 edgar_results = dict(sorted(edgar_results.items(), key=lambda gene: gene[1]['fc']))
-print(f'There are {len(edgar_results)} genes with Fold Change biologically relevant, showing first 5')
-print('Gene ID - Fold Change - p-adj')
-edgar_gene_ids = set()
-for i, (gene, gene_data) in enumerate(edgar_results.items()):
-	edgar_gene_ids.add(gene)
-	if i < 6 :
-		print(f'{gene} - {gene_data["fc"]} - {gene_data["padj"]}')
-	i += 1
-print('\n\n')
+edgar_gene_ids = set(edgar_results.keys())
+print(f'There are {len(edgar_results)} genes with Fold Change biologically relevant')
 
 # comparing results from two methods by Venn diagram showing how many genes overlap
+print('\n\n')
 print('COMPARING RESULTS')
 genes_in_both = list(deseq_gene_ids.intersection(edgar_gene_ids))
 genes_in_both.sort()
@@ -339,6 +324,9 @@ for i, tup in enumerate(catplot_data):
 	values = ', '.join(values)
 	writer_row = [function, values]
 	de_functions_writer.writerow(writer_row)
+print('\n\n')
+print(f'Functions result tsv table saved to {output_dir}/de_functions.tsv')
+
 # plotting function expression change
 catplot_data = {'names': catplot_names, 'values': catplot_values, 'Change': catplot_hue}
 g = sns.catplot(catplot_data, x='values', y='names', hue='Change',  height=7, aspect=1.5, orient='v', palette='dark')
@@ -355,8 +343,6 @@ results_file = open(Path(output_dir, 'de_results.tsv'), mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}
 results_writer.writerow(['Gene_ID', 'Gene_name', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR', 'biological functions'])
-print('Genes both methods agree on:')
-print('Gene ID - FC by DESeq2 - FC by EdgeR - ratio between DESeq2 and EdgeR values')
 for gene_id in genes_in_both:
 	gene_name = gene_names[gene_id]
 	edgar_fc = edgar_results[gene_id]['fc']
@@ -365,10 +351,9 @@ for gene_id in genes_in_both:
 	deseq_padj = deseq_results[gene_id]['padj']
 	mean_fc = (deseq_fc+edgar_fc)/2
 	ratio = deseq_fc/edgar_fc
-	print(f'{gene_id} - {deseq_fc} - {edgar_fc} - {ratio}')
 	bio_func = go_data[gene_id]
 	bio_func = ', '.join(bio_func)
 	row = [gene_id, gene_name, deseq_fc, edgar_fc, ratio, deseq_padj, edgar_padj, bio_func]
 	results_writer.writerow(row)
-print('\n\n')
-print(f'Result tsv table saved to De_results.tsv')
+print('\n')
+print(f'Genes result tsv table saved to {output_dir}/de_results.tsv')
