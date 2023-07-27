@@ -1,3 +1,21 @@
+"""	DE Combine Harvester - This program is for robust differential expression analysis with single terminal command
+	Copyright (C) 2023 PunkOkami
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+	
+	E-mail contact can be found on my github page: https://github.com/PunkOkami"""
+
 import csv
 from pathlib import Path
 import subprocess
@@ -14,7 +32,7 @@ def rsem_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str],
 	# searching provided dir to find all files matching rsem output
 	data_paths = Path(data_dir).rglob('*.genes.results')
 	
-	# reading data from files and combining them into one big object
+	# reading data from files and combining them into one big object as well as reading gene names and sample names
 	data_dict = {}
 	gene_names = []
 	for path in data_paths:
@@ -46,7 +64,7 @@ def salmon_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str
 	# searching provided dir to find all files matching salmon output
 	data_paths = Path(data_dir).rglob('quant.genes.sf')
 	
-	# reading data from files and combining them into one big object
+	# reading data from files and combining them into one big object as well as reading gene names and sample names
 	data_dict = {}
 	gene_names = []
 	for path in data_paths:
@@ -75,8 +93,8 @@ def salmon_reading_data(data_dir: str) -> (dict[str: dict[str: float]], list[str
 
 
 # argparsing
-parser = argparse.ArgumentParser(prog='Differential Expression Combine Harvester',
-								description='This program is for robust differential expression analysis with one terminal command')
+parser = argparse.ArgumentParser(prog='DE Combine Harvester',
+								 description='This program is for robust differential expression analysis with single terminal command')
 parser.add_argument('dirname', help='path to directory containing results of one of supported programs, seek input_type')
 parser.add_argument('input_type', help='one of [salmon, rsem]. Specifies what program was used to calculate gene counts')
 parser.add_argument('design_filename', help='path to file explaining experiment design, see README for information how to write one')
@@ -90,14 +108,18 @@ design_path = args.design_filename
 fc_cut_off = args.fc_cut_off
 scripts_wd = Path(__file__).parent
 
+# priting copyright notice
+print('DE Combine Harvester Copyright (C) 2023 PunkOkami', 'This program comes with ABSOLUTELY NO WARRANTY',
+	  'This is free software, and you are welcome to redistribute it under certain conditions', 'For details see LICENSE', sep='\n')
+sleep(10)
+
 print('RUNNING DE ANALYSIS')
 
-# Creating table saying what group is what sample is in
 print('Loading data')
 data_dict = {}
 sample_names = []
 gene_names = []
-# loading data
+# loading data according to what program was used to count up genes
 if input_type == 'rsem':
 	data_dict, sample_names, gene_names = rsem_reading_data(data_dir)
 elif input_type == 'salmon':
@@ -107,7 +129,8 @@ else:
 
 # constructing sample_data file in a way for rows to be in order with colnames in data file
 # also checking limiting samples to sample names in design file
-# reading experiment design file
+
+# reading experiment design file, this file type is explained in detail in README
 design = {}
 design_file = open(design_path)
 for line in design_file:
@@ -126,7 +149,7 @@ for sample in samples_in_design:
 		print(f'ERROR: sample {sample} file was not found in data directory, but is in experiment design file')
 		exit(0)
 
-# ordering dictionary according to sample_names
+# ordering samples dictionary according to sample_names order and creating samples_in_design list for filtering data_dict
 samples_order = {sample: index for index, sample in enumerate(sample_names)}
 design = sorted(design.items(), key=lambda item: samples_order[item[0]])
 samples_in_design = [tup[0] for tup in design]
@@ -134,7 +157,7 @@ samples_in_design = [tup[0] for tup in design]
 # creating Workdata dir just in case it does not exist yet to have some space for files needed internally
 Path(scripts_wd, 'Workdata').mkdir(exist_ok=True)
 
-# creating table saying what group is what sample is in
+# writing table saying what group is each sample in needed for R scripts
 sample_data_file = open(Path(scripts_wd, 'Workdata/sample_data.tsv'), mode='w')
 sample_data_writer = csv.writer(sample_data_file, delimiter='\t')
 sample_data_writer.writerow(['Sample_name', 'Sample_group'])
@@ -142,18 +165,18 @@ for row in design:
 	sample_data_writer.writerow(row)
 sample_data_file.close()
 
-# Ordering samples to fit order in samples_in_design
+# ordering samples to fit order in samples_in_design and filtering out ones that are not in design file
 design_order = {sample_name: index for index, sample_name in enumerate(samples_in_design)}
 data_dict = {sample: data for sample, data in data_dict.items() if sample in samples_in_design}
 data_dict = sorted(data_dict.items(), key=lambda item: design_order[item[0]])
 
-# Putting all data in one single dictionary
+# putting all data in one single dictionary for easier writing to de_counts file
 gene_dict = {gene: [] for gene in gene_names}
 for sample, genes in data_dict:
 	for gene, count in genes.items():
 		gene_dict[gene].append(count)
 
-# Saving data to file to be read into R easily
+# saving data to file to be read into R easily
 de_counts_file = open(Path(scripts_wd, 'Workdata/de_counts.tsv'), mode='w')
 out_writer = csv.writer(de_counts_file, delimiter='\t')
 columns_names = ['Gene_ID']
@@ -171,11 +194,11 @@ graphs_dir.mkdir(exist_ok=True)
 for dir_name in ['Comparison', 'DESeq2', 'edgeR']:
 	Path(graphs_dir, dir_name).mkdir(exist_ok=True)
 
-# calling R scripts
+# calling R scripts and providing them all needed paths
 print('Running DESeq2 analysis')
-subprocess.call(f'Rscript {Path(scripts_wd, "deseq-analysis.R")} {scripts_wd} {output_dir}', shell=True)
+subprocess.call(f'Rscript {Path(scripts_wd, "deseq-analysis.R")} {scripts_wd} {output_dir} {fc_cut_off}', shell=True)
 print('Running EdgeR analysis')
-subprocess.call(f'Rscript {Path(scripts_wd, "edger-analysis.R")} {scripts_wd} {output_dir}', shell=True)
+subprocess.call(f'Rscript {Path(scripts_wd, "edger-analysis.R")} {scripts_wd} {output_dir} {fc_cut_off}', shell=True)
 print('DE ANALYSIS COMPLETE, LOADING RESULTS')
 
 # loading results from DESeq2 script
@@ -203,6 +226,7 @@ deseq_results_file.close()
 print('\n\n')
 print('Reading DESeq results')
 
+# filtering results by fc_cut_off
 deseq_results = {gene: gene_data for gene, gene_data in deseq_results.items() if abs(gene_data['log_fc']) > fc_cut_off}
 deseq_results = dict(sorted(deseq_results.items(), key=lambda gene: gene[1]['fc']))
 deseq_gene_ids = set(deseq_results.keys())
@@ -210,6 +234,7 @@ print(f'There is {len(deseq_results)} genes with Fold Change biologically releva
 
 print('\n\n')
 print('Reading EdgeR results')
+
 # loading results from EdgeR script
 edgar_results_file = open(Path(scripts_wd, 'Workdata/edger_results.tsv'))
 edgar_reader = csv.reader(edgar_results_file, delimiter='\t')
@@ -250,17 +275,22 @@ plt.savefig('Graphs/Comparison/venn.png', format='png')
 plt.close()
 
 # finding what biological role genes has accoriding to Biomart database
+
+# testing whether script can connect to database, connection fails sometimes
 print('Connecting to Biomart database, will take a bit, do not stop the execution')
 try:
 	server = BiomartServer('http://useast.ensembl.org/biomart')
 except:
 	print('Error occured while trying to connect to Biomart.\nHappens sometimes, try again in 15 minutes')
 	exit(1)
+
+# if connection was established, asking about genes one by one
 ensembl_mart = server.datasets['hsapiens_gene_ensembl']
 attributes = ['name_1006', 'namespace_1003', 'external_gene_name']
 go_data = {}
 gene_names = {}
 print('Asking about genes')
+# if there are more than 100 genes to ask about code limits traffic a bit
 if len(genes_in_both) > 100:
 	print('There are more than 100 genes to ask about, requests will be cut into chunks of 100 to limit traffic.')
 	print('All genes will be asked about, it will just take some time')
@@ -300,7 +330,7 @@ for gene_id, functions in go_data.items():
 		mean_fcs.append(mean_fc)
 		catplot_data[function] = mean_fcs
 
-# sorting data and selecting functions that have highest
+# sorting data and selecting functions that have highest fold change
 de_functions_file = open(Path(output_dir, 'de_functions.tsv'), mode='w')
 de_functions_writer = csv.writer(de_functions_file, delimiter='\t')
 de_functions_writer.writerow(['Biological_function', 'values_of_FC'])
@@ -309,6 +339,10 @@ catplot_names = []
 catplot_values = []
 catplot_hue = []
 goal = 0
+
+# except just filtering first 50 functions, it finds all functions that have values of fold change in first 50
+# as one gene tends to be connected to many functions, this provides cut off by value and index at the same time
+# also writes out tsv table with all functions
 for i, tup in enumerate(catplot_data):
 	function = tup[0]
 	values = tup[1]
@@ -338,7 +372,7 @@ g.set(xticklabels=[])
 plt.savefig('Graphs/Comparison/FC_biological_functions.png', format='png')
 plt.close()
 
-# printing info about fc of genes two methods agree on and saving that data to a file
+# saving data about all genes and their change to a tsv table
 results_file = open(Path(output_dir, 'de_results.tsv'), mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}

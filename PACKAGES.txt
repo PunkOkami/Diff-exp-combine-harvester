@@ -1,0 +1,21 @@
+List of packages need for this program to work, available for most systems
+
+Needed Python packages outside of std lib:
+ - matplotlib_venn
+ - matplotlib
+ - biomart
+ - tqdm
+ - seaborn
+
+ Needed R packages outside of std lib:
+ - DESeq2
+ - sets
+ - pheatmap
+ - ggplot2
+ - gplots
+ - RColorBrewer
+ - readr
+ - limma
+ - edgeR
+
+ Program also requires Rscript program

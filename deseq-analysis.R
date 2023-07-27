@@ -1,4 +1,21 @@
-# loading needed libs
+    # DE Combine Harvester - This program is for robust differential expression analysis with single terminal command
+    # Copyright (C) 2023 PunkOkami
+    
+    # This program is free software: you can redistribute it and/or modify
+    # it under the terms of the GNU General Public License as published by
+    # the Free Software Foundation, either version 3 of the License, or
+    # (at your option) any later version.
+    
+    # This program is distributed in the hope that it will be useful,
+    # but WITHOUT ANY WARRANTY; without even the implied warranty of
+    # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    # GNU General Public License for more details.
+    
+    # You should have received a copy of the GNU General Public License
+    # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    
+    # E-mail contact can be found on my github page: https://github.com/PunkOkami"
+
 suppressPackageStartupMessages(library(DESeq2))
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(pheatmap))
@@ -11,6 +28,8 @@ suppressPackageStartupMessages(library(readr))
 args = commandArgs(trailingOnly = TRUE)
 workspace = args[1]
 output_dir = args[2]
+# this arg is cut off set by Python input
+fc_cut_off = as.numeric(args[3])
 
 # setting wd to where program is located
 setwd(workspace)
@@ -30,10 +49,10 @@ gene_ids = count_data[, 1]
 count_data = count_data[, -1]
 rownames(count_data) = gene_ids
 
-# creating colData for DESeq2 and changing object from tximport object into DESeq2 data set
+# using dataset read from a file and sample data to create DESeqDataSet
 deseq2_data = suppressMessages(DESeqDataSetFromMatrix(countData = round(count_data), colData = sample_data, design = ~sample_group))
 
-# performing DESeq analysis and printing results in few ways
+# performing DESeq analysis and filtering results by p-adj
 dds = DESeq(deseq2_data, quiet = TRUE)
 res = results(dds)
 res =  res[complete.cases(res$padj) & res$padj < 0.05, ]
@@ -57,14 +76,14 @@ for (gene in small_padj) {
 garbage = dev.off()
 
 # looking for genes with both very high absolute fold change as well as small padj
-high_fc = rownames(res[abs(res$log2FoldChange) > 1.5, ])
+high_fc = rownames(res[abs(res$log2FoldChange) > fc_cut_off, ])
 small_padj_x_high_fc = intersect(rownames(res), high_fc)
 
-# plotting vulcanoplot showing relation between FC and padj and pointing out genes found using sets
+# plotting vulcanoplot showing relation between FC and padj
 png(filename = 'Graphs/DESeq2/Vulcano.png')
 with(res, plot(log2FoldChange, -log10(pvalue), pch = 20, main = "Volcano plot", col = 'blue'))
-with(subset(res, padj < 0.05 & abs(log2FoldChange) > 1.5), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red"))
-legend(-8, 220,  legend = c('absolute FC < 1.5', 'absolute FC > 1.5'), col = c('blue', 'red'))
+with(subset(res, padj < 0.05 & abs(log2FoldChange) > fc_cut_off), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red"))
+legend(-8, 220,  legend = c('absolute FC < fc_cut_off', 'absolute FC > fc_cut_off'), col = c('blue', 'red'))
 garbage = dev.off()
 
 # creating heatmap of counts of genes with high FC

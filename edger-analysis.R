@@ -1,3 +1,21 @@
+    # DE Combine Harvester - This program is for robust differential expression analysis with single terminal command
+    # Copyright (C) 2023 PunkOkami
+    
+    # This program is free software: you can redistribute it and/or modify
+    # it under the terms of the GNU General Public License as published by
+    # the Free Software Foundation, either version 3 of the License, or
+    # (at your option) any later version.
+    
+    # This program is distributed in the hope that it will be useful,
+    # but WITHOUT ANY WARRANTY; without even the implied warranty of
+    # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    # GNU General Public License for more details.
+    
+    # You should have received a copy of the GNU General Public License
+    # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    
+    # E-mail contact can be found on my github page: https://github.com/PunkOkami"
+
 # loading needed libs
 suppressPackageStartupMessages(library(limma))
 suppressPackageStartupMessages(library(edgeR))
@@ -8,6 +26,8 @@ suppressPackageStartupMessages(library(readr))
 args = commandArgs(trailingOnly = TRUE)
 workspace = args[1]
 output_dir = args[2]
+# this arg is cut off set by Python input
+fc_cut_off = as.numeric(args[3])
 
 # setting wd to where program is located
 setwd(workspace)
@@ -47,12 +67,13 @@ garbage = dev.off()
 edgar_results = exactTest(edgar_data)
 
 # showing summary of differential expression
-de_genes = decideTestsDGE(edgar_results, lfc = 1.5)
+de_genes = decideTestsDGE(edgar_results, lfc = fc_cut_off)
 important_genes = rownames(de_genes)[which(de_genes != 0)]
 png(filename = 'Graphs/edgeR/Mean_difference_plot.png')
 plotSmear(edgar_results, de.tags = important_genes, main = 'Mean difference plot')
 garbage = dev.off()
 
+# creating heatmap of counts of genes with high FC
 important_genes_counts = count_data[which(rownames(count_data) %in% important_genes), ]
 if (nrow(important_genes_counts) <= 75) {
   fontsize = round(10/(nrow(important_genes_counts)%%15), digits = 2)
