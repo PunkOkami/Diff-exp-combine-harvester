@@ -98,12 +98,14 @@ parser = argparse.ArgumentParser(prog='DE Combine Harvester',
 parser.add_argument('dirname', help='path to directory containing results of one of supported programs, seek input_type')
 parser.add_argument('input_type', help='one of [salmon, rsem]. Specifies what program was used to calculate gene counts')
 parser.add_argument('design_filename', help='path to file explaining experiment design, see README for information how to write one')
-parser.add_argument('-o', '--out_dir', help='Optional argument used to specify what directory save results to, defaults to cwd', default=Path.cwd(), type=Path)
-parser.add_argument('-fc', '--fc_cut_off', help='Cut off for log fc values when selecting genes to be analysed by comparison, defualts to 1.5', default=1.5, type=float)
+parser.add_argument('-o', '--out_dir', help='Optional argument used to specify what directory save results to, defaults to cwd, will be created if non-existent', default=Path.cwd(), type=Path)
+parser.add_argument('-fc', '--fc_cut_off', help='Cut off for log fc values when selecting genes to be analysed by comparison, defaults to 1.5', default=1.5, type=float)
 args = parser.parse_args()
 data_dir = args.dirname
 input_type = args.input_type
 output_dir = args.out_dir
+if output_dir != Path.cwd():
+	output_dir.mkdir(exist_ok=True)
 design_path = args.design_filename
 fc_cut_off = args.fc_cut_off
 scripts_wd = Path(__file__).parent
@@ -132,15 +134,19 @@ else:
 
 # reading experiment design file, this file type is explained in detail in README
 design = {}
+groups = []
 design_file = open(design_path)
 for line in design_file:
 	line = line.strip()
 	line = line.split(': ')
 	group = line[0]
+	groups.append(group)
 	samples = line[1].split(', ')
 	for sample in samples:
 		design[sample] = group
 design_file.close()
+# this variable will be used in naming output tsv files
+design_name = '_vs_'.join(groups)
 
 # pulling out list of samples in design file and checking if all of them are in sample_names
 samples_in_design = list(design.keys())
@@ -331,7 +337,7 @@ for gene_id, functions in go_data.items():
 		catplot_data[function] = mean_fcs
 
 # sorting data and selecting functions that have highest fold change
-de_functions_file = open(Path(output_dir, 'de_functions.tsv'), mode='w')
+de_functions_file = open(Path(output_dir, f'{design_name}_de_functions.tsv'), mode='w')
 de_functions_writer = csv.writer(de_functions_file, delimiter='\t')
 de_functions_writer.writerow(['Biological_function', 'values_of_FC'])
 catplot_data = sorted(catplot_data.items(), key=lambda tup: max(list(map(abs, tup[1]))), reverse=True)
@@ -359,7 +365,7 @@ for i, tup in enumerate(catplot_data):
 	writer_row = [function, values]
 	de_functions_writer.writerow(writer_row)
 print('\n\n')
-print(f'Functions result tsv table saved to {output_dir}/de_functions.tsv')
+print(f'Functions result tsv table saved to {output_dir}/{design_name}_de_functions.tsv')
 
 # plotting function expression change
 catplot_data = {'names': catplot_names, 'values': catplot_values, 'Change': catplot_hue}
@@ -373,7 +379,7 @@ plt.savefig('Graphs/Comparison/FC_biological_functions.png', format='png')
 plt.close()
 
 # saving data about all genes and their change to a tsv table
-results_file = open(Path(output_dir, 'de_results.tsv'), mode='w')
+results_file = open(Path(output_dir, f'{design_name}_de_results.tsv'), mode='w')
 results_writer = csv.writer(results_file, delimiter='\t')
 genes_in_both_dict = {}
 results_writer.writerow(['Gene_ID', 'Gene_name', 'FC_by_DESeq2', 'FC_by_EdgeR', 'ratio_of_FC values', 'p-adj_by_DESeq2', 'p-adj_by_EdgeR', 'biological functions'])
@@ -390,4 +396,4 @@ for gene_id in genes_in_both:
 	row = [gene_id, gene_name, deseq_fc, edgar_fc, ratio, deseq_padj, edgar_padj, bio_func]
 	results_writer.writerow(row)
 print('\n')
-print(f'Genes result tsv table saved to {output_dir}/de_results.tsv')
+print(f'Genes result tsv table saved to {output_dir}/{design_name}_de_results.tsv')
