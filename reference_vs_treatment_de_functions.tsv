@@ -1,45 +1,45 @@
 Biological_function	values_of_FC
-autophagy	-2.284
-autophagosome assembly	-2.284
-cellular response to starvation	-2.284
-positive regulation of vacuole organization	-2.284
-positive regulation of autophagosome assembly	-2.284
-immune response	1.621, -1.537
-antigen processing and presentation	1.621
-immune system process	1.621
-adaptive immune response	1.621
-antigen processing and presentation of peptide or polysaccharide antigen via MHC class II	1.621
-cell surface receptor signaling pathway	1.614
-single fertilization	1.614
-cell adhesion	-1.551, -1.537
-ossification	-1.551
-signal transduction	-1.551, -1.537
-biomineral tissue development	-1.551
-positive regulation of DNA-templated transcription	-1.551
-response to vitamin D	-1.551
-decidualization	-1.551
-embryo implantation	-1.551
-osteoblast differentiation	-1.551
-androgen catabolic process	-1.551
-positive regulation of bone resorption	-1.551
-cellular response to testosterone stimulus	-1.551
-positive regulation of estradiol secretion	-1.551
-response to organic substance	-1.551
-cell differentiation	-1.551
-response to macrophage colony-stimulating factor	-1.551
-response to steroid hormone	-1.551
-negative regulation of collateral sprouting of intact axon in response to injury	-1.551
-apoptotic process	1.545
-negative regulation of proteasomal ubiquitin-dependent protein catabolic process	1.545
-purine nucleotide metabolic process	1.545
-intrinsic apoptotic signaling pathway by p53 class mediator	1.545
-diadenosine triphosphate catabolic process	1.545
-G protein-coupled receptor signaling pathway	-1.537
-chemotaxis	-1.537
-inflammatory response	-1.537
-chemokine-mediated signaling pathway	-1.537
-positive regulation of angiogenesis	-1.537
-adenylate cyclase-modulating G protein-coupled receptor signaling pathway	-1.537
-positive regulation of cytosolic calcium ion concentration	-1.537
-cellular defense response	-1.537
-positive regulation of endothelial cell proliferation	-1.537
+autophagy	0.20532767518801648
+autophagosome assembly	0.20532767518801648
+cellular response to starvation	0.20532767518801648
+positive regulation of vacuole organization	0.20532767518801648
+positive regulation of autophagosome assembly	0.20532767518801648
+immune response	3.0758816625405374, 0.34460128824390773
+antigen processing and presentation	3.0758816625405374
+immune system process	3.0758816625405374
+adaptive immune response	3.0758816625405374
+antigen processing and presentation of peptide or polysaccharide antigen via MHC class II	3.0758816625405374
+cell surface receptor signaling pathway	3.0609935396453354
+single fertilization	3.0609935396453354
+cell adhesion	0.3412734294712916, 0.34460128824390773
+ossification	0.3412734294712916
+signal transduction	0.3412734294712916, 0.34460128824390773
+biomineral tissue development	0.3412734294712916
+positive regulation of DNA-templated transcription	0.3412734294712916
+response to vitamin D	0.3412734294712916
+decidualization	0.3412734294712916
+embryo implantation	0.3412734294712916
+osteoblast differentiation	0.3412734294712916
+androgen catabolic process	0.3412734294712916
+positive regulation of bone resorption	0.3412734294712916
+cellular response to testosterone stimulus	0.3412734294712916
+positive regulation of estradiol secretion	0.3412734294712916
+response to organic substance	0.3412734294712916
+cell differentiation	0.3412734294712916
+response to macrophage colony-stimulating factor	0.3412734294712916
+response to steroid hormone	0.3412734294712916
+negative regulation of collateral sprouting of intact axon in response to injury	0.3412734294712916
+apoptotic process	2.9180406884803505
+negative regulation of proteasomal ubiquitin-dependent protein catabolic process	2.9180406884803505
+purine nucleotide metabolic process	2.9180406884803505
+intrinsic apoptotic signaling pathway by p53 class mediator	2.9180406884803505
+diadenosine triphosphate catabolic process	2.9180406884803505
+G protein-coupled receptor signaling pathway	0.34460128824390773
+chemotaxis	0.34460128824390773
+inflammatory response	0.34460128824390773
+chemokine-mediated signaling pathway	0.34460128824390773
+positive regulation of angiogenesis	0.34460128824390773
+adenylate cyclase-modulating G protein-coupled receptor signaling pathway	0.34460128824390773
+positive regulation of cytosolic calcium ion concentration	0.34460128824390773
+cellular defense response	0.34460128824390773
+positive regulation of endothelial cell proliferation	0.34460128824390773

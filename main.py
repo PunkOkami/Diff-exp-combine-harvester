@@ -304,23 +304,25 @@ pbar = tqdm(total=len(genes_in_both), desc='Processing genes')
 for i in range(0, len(genes_in_both), 100):
 	functions = []
 	gene_ids = genes_in_both[i:i+100]
-	gene_ids = [gene_id.split('.')[0] for gene_id in gene_ids]
-	response = ensembl_mart.search({'attributes': attributes, 'filters': {'ensembl_gene_id': gene_ids}})
+	genes_requested = [gene_id.split('.')[0] for gene_id in gene_ids]
+	response = ensembl_mart.search({'attributes': attributes, 'filters': {'ensembl_gene_id': genes_requested}})
 	response = response.raw.data.decode('utf-8').split('\n')[1:-1]
 	response = [line.split('\t') for line in response]
 	for gene_id in gene_ids:
-		gene_name = [line[2] for line in response if line[3] == gene_id]
+		gene_name = [line[2] for line in response if line[3] == gene_id.split('.')[0]]
 		if set(gene_name) == {''}:
+			gene_name = 'NA'
+		elif len(gene_name) == 0:
 			gene_name = 'NA'
 		else:
 			gene_name = gene_name[0]
-		functions = [line[0] for line in response if line[3] == gene_id and line[1] == 'biological_process']
+		functions = [line[0] for line in response if line[3] == gene_id.split('.')[0] and line[1] == 'biological_process']
 		if len(functions) == 0:
 			functions = ['NA']
 		gene_names[gene_id] = gene_name
 		go_data[gene_id] = functions
+	sleep(30)
 	pbar.update(len(gene_ids))
-	sleep(60)
 pbar.close()
 
 # constructing catplot_data to show catplot of functions that changed the most
@@ -341,14 +343,14 @@ de_functions_file = open(Path(output_dir, f'{design_name}_de_functions.tsv'), mo
 de_functions_writer = csv.writer(de_functions_file, delimiter='\t')
 de_functions_writer.writerow(['Biological_function', 'values_of_FC'])
 catplot_data = sorted(catplot_data.items(), key=lambda tup: max(list(map(abs, tup[1]))), reverse=True)
-catplot_names = []
-catplot_values = []
-catplot_hue = []
-goal = 0
 
 # except just filtering first 50 functions, it finds all functions that have values of fold change in first 50
 # as one gene tends to be connected to many functions, this provides cut off by value and index at the same time
 # also writes out tsv table with all functions
+catplot_names = []
+catplot_values = []
+catplot_hue = []
+goal = 0
 for i, tup in enumerate(catplot_data):
 	function = tup[0]
 	values = tup[1]
@@ -360,6 +362,7 @@ for i, tup in enumerate(catplot_data):
 		break
 	if i == 50:
 		goal = max(list(map(abs, values)))
+	values = [2**val for val in values]
 	values = [str(val) for val in values]
 	values = ', '.join(values)
 	writer_row = [function, values]
