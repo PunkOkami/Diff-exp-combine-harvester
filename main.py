@@ -285,48 +285,48 @@ plt.close()
 # testing whether script can connect to database, connection fails sometimes
 print('Connecting to Biomart database, will take a bit, do not stop the execution')
 try:
-	server = BiomartServer('http://useast.ensembl.org/biomart')
+	server = BiomartServer('http://www.ensembl.org/biomart')
+	ensembl_mart = server.datasets['hsapiens_gene_ensembl']
 except:
 	print('Error occured while trying to connect to Biomart.\nHappens sometimes, try again in 15 minutes')
 	exit(1)
 
 # if connection was established, asking about genes one by one
-ensembl_mart = server.datasets['hsapiens_gene_ensembl']
-attributes = ['name_1006', 'namespace_1003', 'external_gene_name']
+attributes = ['name_1006', 'namespace_1003', 'external_gene_name', 'ensembl_gene_id']
 go_data = {}
 gene_names = {}
 print('Asking about genes')
 # if there are more than 100 genes to ask about code limits traffic a bit
 if len(genes_in_both) > 100:
-	print('There are more than 100 genes to ask about, requests will be cut into chunks of 100 to limit traffic.')
+	print('There are more than 100 genes to ask about, genes will be cut into chunks of 100 to limit traffic to database.')
 	print('All genes will be asked about, it will just take some time')
 pbar = tqdm(total=len(genes_in_both), desc='Processing genes')
-for i,  gene_id in enumerate(genes_in_both):
-	go_terms = []
-	gene_name = ''
-	response = ensembl_mart.search({'attributes': attributes, 'filters': {'ensembl_gene_id': gene_id.split('.')[0]}})
-	response = response.raw.data.decode('utf-8').split('\n')[:-1]
-	if len(response) != 0:
-		go_terms = [line.split('\t')[0] for line in response if line.split('\t')[1] == 'biological_process'][:-1]
-		gene_name = response[0].split('\t')[-1]
-	if gene_name == '':
-		gene_name = 'NA'
-	gene_names[gene_id] = gene_name
-	if len(go_terms) == 0:
-		go_data[gene_id] = ['Unknown']
-	else:
-		go_data[gene_id] = go_terms
-	pbar.update(1)
-	i += 1
-	if i % 100 == 0:
-		print('Waiting 1 minute')
-		sleep(60)
+for i in range(0, len(genes_in_both), 100):
+	functions = []
+	gene_ids = genes_in_both[i:i+100]
+	gene_ids = [gene_id.split('.')[0] for gene_id in gene_ids]
+	response = ensembl_mart.search({'attributes': attributes, 'filters': {'ensembl_gene_id': gene_ids}})
+	response = response.raw.data.decode('utf-8').split('\n')[1:-1]
+	response = [line.split('\t') for line in response]
+	for gene_id in gene_ids:
+		gene_name = [line[2] for line in response if line[3] == gene_id]
+		if set(gene_name) == {''}:
+			gene_name = 'NA'
+		else:
+			gene_name = gene_name[0]
+		functions = [line[0] for line in response if line[3] == gene_id and line[1] == 'biological_process']
+		if len(functions) == 0:
+			functions = ['NA']
+		gene_names[gene_id] = gene_name
+		go_data[gene_id] = functions
+	pbar.update(len(gene_ids))
+	sleep(60)
 pbar.close()
 
 # constructing catplot_data to show catplot of functions that changed the most
 catplot_data = {}
 for gene_id, functions in go_data.items():
-	if functions == ['Unknown']:
+	if functions == ['NA']:
 		continue
 	edgar_log_fc = edgar_results[gene_id]['log_fc']
 	deseq_log_fc = deseq_results[gene_id]['log_fc']
@@ -355,7 +355,7 @@ for i, tup in enumerate(catplot_data):
 	if i <= 50 or max(list(map(abs, values))) == goal:
 		catplot_values.extend(values)
 		catplot_names.extend([function for i in range(len(values))])
-		catplot_hue.extend([True if value > 0 else False for value in values])
+		catplot_hue.extend(['positive' if value > 0 else 'negative' for value in values])
 	else:
 		break
 	if i == 50:

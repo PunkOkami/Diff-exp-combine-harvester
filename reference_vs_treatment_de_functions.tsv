@@ -3,11 +3,14 @@ autophagy	-2.284
 autophagosome assembly	-2.284
 cellular response to starvation	-2.284
 positive regulation of vacuole organization	-2.284
+positive regulation of autophagosome assembly	-2.284
 immune response	1.621, -1.537
 antigen processing and presentation	1.621
 immune system process	1.621
 adaptive immune response	1.621
+antigen processing and presentation of peptide or polysaccharide antigen via MHC class II	1.621
 cell surface receptor signaling pathway	1.614
+single fertilization	1.614
 cell adhesion	-1.551, -1.537
 ossification	-1.551
 signal transduction	-1.551, -1.537
@@ -25,10 +28,12 @@ response to organic substance	-1.551
 cell differentiation	-1.551
 response to macrophage colony-stimulating factor	-1.551
 response to steroid hormone	-1.551
+negative regulation of collateral sprouting of intact axon in response to injury	-1.551
 apoptotic process	1.545
 negative regulation of proteasomal ubiquitin-dependent protein catabolic process	1.545
 purine nucleotide metabolic process	1.545
 intrinsic apoptotic signaling pathway by p53 class mediator	1.545
+diadenosine triphosphate catabolic process	1.545
 G protein-coupled receptor signaling pathway	-1.537
 chemotaxis	-1.537
 inflammatory response	-1.537
@@ -37,3 +42,4 @@ positive regulation of angiogenesis	-1.537
 adenylate cyclase-modulating G protein-coupled receptor signaling pathway	-1.537
 positive regulation of cytosolic calcium ion concentration	-1.537
 cellular defense response	-1.537
+positive regulation of endothelial cell proliferation	-1.537

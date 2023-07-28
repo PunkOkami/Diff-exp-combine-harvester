@@ -12,3 +12,5 @@ Date	Task
 24.07	Importing data from RSEM and bug fixing all errors introducted by importing data from RSEM
 25.07	Improving visualisation and minor bugfixing or upgrades
 26.07	Improved outputs (making dirs, limited printing to console)
+27.07	Added documentation and comments, slightly changed output files
+28.07	Changed requesting data from database to limit traffic and added minor fixes
